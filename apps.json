@@ -1,6 +1,6 @@
 {
   "meta": {
-    "title": "Codeguy's Toolbox",
+    "title": "Codeguy's Toolkit",
     "subtitle": "個人小工具入口",
     "lastUpdated": "2026-05-13"
   },
@@ -10,11 +10,11 @@
       "name": "計算工具",
       "icon": "calculator",
       "apps": [
-        {
+         {
           "id": "shopping",
           "name": "購物助手",
           "description": "優惠計算、目標金額、多清單管理、語音輸入",
-          "path": "shopping.html",
+          "path": "tools/shopping.html",
           "icon": "shopping-bag",
           "color": "blue",
           "status": "active",
@@ -24,24 +24,13 @@
         {
           "id": "hotpot",
           "name": "咕嚕咕嚕 - 火鍋計時大師",
-          "description": "火鍋食材計時器、自訂食譜、多計時器同時運行、完成時有音效與震動提醒",
-          "path": "hotpot.html",
-          "icon": "clock",
-          "color": "orange",
-          "status": "active",
-          "featured": true,
-          "tags": ["火鍋", "計時器", "烹飪", "localStorage", "音效"]
-        },
-        {
-          "id": "hotpot-online",
-          "name": "咕嚕咕嚕（線上版）",
-          "description": "火鍋食材計時器線上版本、可愛卡通風格、預設食材：牛柏葉(7分鐘)、鮮沙白(3分鐘)、Q鮑魚(5分鐘)、滑烏冬(5分鐘)",
+          "description": "火鍋食材計時器、自訂食譜、多計時器同時運行、可愛卡通風格、預設食材：牛柏葉(7分鐘)、鮮沙白(3分鐘)、Q鮑魚(5分鐘)、滑烏冬(5分鐘)",
           "path": "https://codeguy-hotpot.s3.ap-east-1.amazonaws.com/index.html",
           "icon": "clock",
           "color": "orange",
           "status": "active",
-          "featured": false,
-          "tags": ["火鍋", "計時器", "烹飪", "外部連結", "Web Audio", "震動"]
+          "featured": true,
+          "tags": ["火鍋", "計時器", "烹飪", "Web Audio", "震動"]
         },
         {
           "id": "tip-calculator",
