@@ -24,7 +24,7 @@
         {
           "id": "hotpot",
           "name": "咕嚕咕嚕 - 火鍋計時大師",
-          "description": "火鍋食材計時器、自訂食譜、多計時器同時運行、可愛卡通風格、預設食材：牛柏葉(7分鐘)、鮮沙白(3分鐘)、Q鮑魚(5分鐘)、滑烏冬(5分鐘)",
+          "description": "火鍋食材計時器、自訂食譜、多計時器同時運行",
           "path": "https://codeguy-hotpot.s3.ap-east-1.amazonaws.com/index.html",
           "icon": "clock",
           "color": "orange",
