@@ -104,6 +104,24 @@
           "tags": ["投資", "報酬率", "複利"]
         }
       ]
+    },
+    {
+      "id": "entertainment",
+      "name": "娛樂",
+      "icon": "music",
+      "apps": [
+        {
+          "id": "guitar",
+          "name": "GuitarWorld",
+          "description": "吉他音階學習工具",
+          "path": "https://codeguy0425.github.io/guitar",
+          "icon": "music",
+          "color": "purple",
+          "status": "active",
+          "featured": true,
+          "tags": ["吉他", "音樂", "音階"]
+        }
+      ]
     }
   ]
 }
