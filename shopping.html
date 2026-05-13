@@ -1,0 +1,973 @@
+
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>超市優惠計算器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Sans+TC:wght@400;500;700&family=Nunito:wght@700;800&display=swap');
+        
+        :root {
+            --sat: env(safe-area-inset-top, 0px);
+            --sab: env(safe-area-inset-bottom, 0px);
+            --sal: env(safe-area-inset-left, 0px);
+            --sar: env(safe-area-inset-right, 0px);
+        }
+        
+        body {
+            font-family: 'Inter', 'Noto+Sans+TC', sans-serif;
+            background-color: #f1f5f9;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            padding-top: var(--sat);
+            padding-bottom: var(--sab);
+            padding-left: var(--sal);
+            padding-right: var(--sar);
+            min-height: 100vh;
+            min-height: 100dvh;
+        }
+
+        .pulse-mic { animation: pulse 1.5s infinite; }
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0.7); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+        }
+        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .tab-transition { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .winner-card { border: 2px solid #22c55e !important; background-color: #f0fdf4 !important; }
+        
+        /* Ensure SVGs are visible */
+        svg { display: block; shape-rendering: auto; }
+        
+        /* Mobile touch targets - minimum 44px */
+        .touch-btn {
+            min-height: 44px;
+            min-width: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .touch-btn-sm {
+            min-height: 44px;
+            min-width: 44px;
+            padding: 12px;
+        }
+        
+        /* Modal backdrop */
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.4);
+            z-index: 40;
+        }
+        
+        /* Smooth scrolling */
+        .scroll-smooth {
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        /* Prevent text selection on interactive elements */
+        button, label {
+            user-select: none;
+            -webkit-user-select: none;
+        }
+    </style>
+</head>
+<body class="p-2 md:p-6">
+    <div class="max-w-md mx-auto bg-white rounded-[2rem] md:rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-200 flex flex-col min-h-[95vh] min-h-[95dvh]">
+        <!-- Header -->
+        <div class="bg-blue-600 p-6 text-white shrink-0">
+            <div class="flex justify-between items-center mb-4">
+                <div class="flex items-center gap-2 min-w-0">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
+                    <h1 class="text-xl md:text-2xl font-extrabold shrink-0" style="font-family: 'Nunito', 'Noto Sans TC', sans-serif;">購物助手</h1>
+                    <button onclick="renameCurrentList()" class="bg-blue-700/50 hover:bg-blue-700/70 px-3 py-1.5 rounded-xl transition-colors min-w-0 max-w-[120px]">
+                        <span id="current-list-name" class="text-sm font-bold block truncate">未命名清單</span>
+                    </button>
+                </div>
+                <div class="flex gap-1">
+                    <button onclick="promptSaveCurrentAs()" class="touch-btn-sm p-3 hover:bg-blue-500 rounded-full transition-colors" title="儲存目前為新清單">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                    </button>
+                    <button onclick="createNewList()" class="touch-btn-sm p-3 hover:bg-blue-500 rounded-full transition-colors" title="新增空白清單">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    </button>
+                    <button onclick="toggleSettings()" class="touch-btn-sm p-3 hover:bg-blue-500 rounded-full transition-colors" title="設定">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0-2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                    </button>
+                </div>
+            </div>
+            
+            <div id="settings-panel" class="hidden mb-4 bg-blue-700/50 p-4 rounded-2xl">
+                <label class="block text-xs font-semibold uppercase tracking-wider mb-2 opacity-80">更改優惠券門檻 (HK$)</label>
+                <div class="flex gap-2">
+                    <input type="number" id="target-input" value="100" class="flex-1 bg-white/20 border-none rounded-xl p-3 text-white placeholder-white/50 focus:ring-2 focus:ring-white text-base">
+                    <button onclick="saveTarget()" class="touch-btn bg-white text-blue-700 px-5 rounded-xl font-bold text-base">更新</button>
+                </div>
+            </div>
+
+            <p class="text-blue-100 text-sm opacity-90" id="goal-text">目標金額: $100.00</p>
+        </div>
+
+        <!-- Main Tabs -->
+        <div class="flex border-b border-slate-100 shrink-0">
+            <button onclick="switchTab('current')" id="tab-current" class="flex-1 py-3.5 min-h-[52px] text-sm font-bold text-blue-600 border-b-2 border-blue-600 tab-transition">當前清單</button>
+            <button onclick="switchTab('compare')" id="tab-compare" class="flex-1 py-3.5 min-h-[52px] text-sm font-bold text-slate-400 hover:text-slate-600 tab-transition">比價工具</button>
+            <button onclick="switchTab('saved')" id="tab-saved" class="flex-1 py-3.5 min-h-[52px] text-sm font-bold text-slate-400 hover:text-slate-600 tab-transition">已儲存清單</button>
+            <button onclick="switchTab('history')" id="tab-history" class="flex-1 py-3.5 min-h-[52px] text-sm font-bold text-slate-400 hover:text-slate-600 tab-transition">歷史記錄</button>
+        </div>
+
+        <!-- View: Current List -->
+        <div id="view-current" class="flex flex-col flex-1 overflow-hidden">
+            <!-- Progress -->
+            <div class="p-4 md:p-6 border-b border-slate-100 shrink-0">
+                <div class="flex justify-between items-end mb-3">
+                    <div>
+                        <span class="text-slate-500 text-[10px] font-bold uppercase tracking-widest block">目前總計</span>
+                        <span class="text-4xl font-black text-slate-800" id="display-total">$0.00</span>
+                    </div>
+                    <span id="status-badge" class="px-3 py-1 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500">未達標</span>
+                </div>
+                <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden shadow-inner">
+                    <div id="progress-bar" class="bg-blue-500 h-full transition-all duration-500 ease-out" style="width: 0%"></div>
+                </div>
+                <p id="remaining-text" class="mt-4 text-xs text-slate-500 font-medium italic text-center">清單為空</p>
+            </div>
+
+            <!-- Input Section -->
+            <div class="p-6 space-y-3 bg-slate-50/50 shrink-0">
+                <div class="grid grid-cols-12 gap-2">
+                    <div class="relative col-span-12">
+                        <input type="text" id="item-name" placeholder="商品名稱..." class="w-full p-4 pr-12 rounded-2xl border border-slate-200 text-base focus:border-blue-500 shadow-sm appearance-none">
+                        <button id="mic-btn" onclick="toggleVoice()" class="absolute right-2 top-1/2 -translate-y-1/2 p-3 text-slate-400 hover:text-blue-600">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+                        </button>
+                    </div>
+                    <input type="number" id="item-price" placeholder="$ 價錢" step="0.1" class="col-span-7 p-4 rounded-2xl border border-slate-200 text-base focus:border-blue-500 shadow-sm appearance-none">
+                    <input type="number" id="item-qty" value="1" min="1" class="col-span-5 p-4 rounded-2xl border border-slate-200 text-base focus:border-blue-500 text-center shadow-sm appearance-none">
+                </div>
+                
+                 <!-- Special Offer Toggle -->
+                <button onclick="toggleSpecialOffer()" class="w-full text-center text-xs font-bold text-slate-400 hover:text-blue-600 py-3 min-h-[44px] flex items-center justify-center gap-1">
+                    <span id="special-toggle-text">優惠設定</span>
+                    <svg id="special-toggle-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </button>
+                
+                <!-- Special Offer Panel (Collapsible) -->
+                <div id="special-offer-panel" class="hidden bg-blue-50/80 p-4 rounded-2xl border border-blue-100 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <label class="text-sm font-bold text-slate-600 flex items-center gap-3">
+                            <input type="checkbox" id="special-enabled" onchange="toggleSpecialInputs()" class="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                            啟用優惠定價
+                        </label>
+                    </div>
+                    <div class="grid grid-cols-12 gap-2">
+                        <div class="col-span-4">
+                            <label class="text-xs font-bold text-slate-500 block mb-1">買 _ 件</label>
+                            <input type="number" id="special-qty" value="2" min="2" disabled class="w-full p-3 rounded-xl border border-slate-200 text-base bg-slate-100 text-slate-400 appearance-none">
+                        </div>
+                        <div class="col-span-8">
+                            <label class="text-xs font-bold text-slate-500 block mb-1">優惠價 $ _</label>
+                            <input type="number" id="special-price" placeholder="例如：80" step="0.1" disabled class="w-full p-3 rounded-xl border border-slate-200 text-base bg-slate-100 text-slate-400 appearance-none">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- FIXED ADD BUTTON WITH ROBUST PLUS ICON -->
+                <button onclick="addItem()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4.5 min-h-[56px] rounded-2xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-3">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    <span class="text-lg">加入清單</span>
+                </button>
+            </div>
+
+            <!-- List Area -->
+            <div class="p-4 md:p-6 flex-1 overflow-y-auto scroll-smooth">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="font-bold text-slate-700 text-sm md:text-base">已加入項目 (<span id="item-count">0</span>)</h2>
+                    <button onclick="clearAll()" class="touch-btn text-sm font-bold text-red-500 px-3 py-2 min-h-[44px] rounded-xl hover:bg-red-50">清空</button>
+                </div>
+                <div id="items-container" class="space-y-3"></div>
+            </div>
+
+            <!-- Footer Action -->
+            <div id="footer-action" class="p-4 border-t border-slate-100 bg-white hidden" style="padding-bottom: max(1rem, var(--sab));">
+                <button onclick="saveCurrentToHistory()" class="w-full bg-slate-800 hover:bg-black text-white font-bold py-4 min-h-[56px] rounded-2xl flex items-center justify-center gap-3 shadow-xl transition-all active:scale-95">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                    儲存並完成購物
+                </button>
+            </div>
+        </div>
+
+        <!-- View: Compare Tool -->
+        <div id="view-compare" class="hidden flex-1 flex flex-col p-4 md:p-6 space-y-6 overflow-y-auto bg-slate-50 scroll-smooth">
+            <div class="flex justify-between items-center">
+                <h2 class="font-bold text-slate-700">單位價格比價</h2>
+                <button onclick="resetComparison()" class="text-xs font-bold text-slate-400 hover:text-blue-600 flex items-center gap-1">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"></path><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+                    重置
+                </button>
+            </div>
+
+            <div id="card-a" class="bg-white p-5 rounded-3xl shadow-sm border border-slate-200 space-y-4">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                        <span class="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-[10px]">A</span> 商品 A
+                    </h3>
+                    <span id="badge-a" class="hidden bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">最划算</span>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <input type="number" id="comp-a-price" placeholder="價格 ($)" class="p-3.5 rounded-xl border border-slate-200 text-base min-h-[48px] appearance-none">
+                    <input type="number" id="comp-a-unit" placeholder="量 (g/ml)" class="p-3.5 rounded-xl border border-slate-200 text-base min-h-[48px] appearance-none">
+                </div>
+            </div>
+
+            <div id="card-b" class="bg-white p-5 rounded-3xl shadow-sm border border-slate-200 space-y-4">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                        <span class="w-6 h-6 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center text-[10px]">B</span> 商品 B
+                    </h3>
+                    <span id="badge-b" class="hidden bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">最划算</span>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <input type="number" id="comp-b-price" placeholder="價格 ($)" class="p-3.5 rounded-xl border border-slate-200 text-base min-h-[48px] appearance-none">
+                    <input type="number" id="comp-b-unit" placeholder="量 (g/ml)" class="p-3.5 rounded-xl border border-slate-200 text-base min-h-[48px] appearance-none">
+                </div>
+            </div>
+
+            <div id="compare-result" class="hidden p-5 rounded-3xl bg-blue-600 text-white shadow-lg text-center">
+                <p id="winner-text" class="text-lg font-black"></p>
+                <p id="winner-diff" class="text-[10px] mt-1 opacity-90"></p>
+            </div>
+
+            <button onclick="calculateComparison()" class="w-full bg-blue-600 text-white font-bold py-4 min-h-[56px] rounded-2xl shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line><line x1="9" y1="14" x2="9" y2="18"></line><line x1="12" y1="14" x2="12" y2="18"></line><line x1="15" y1="14" x2="15" y2="18"></line><line x1="9" y1="14" x2="15" y2="14"></line></svg>
+                立即計算比價
+            </button>
+        </div>
+
+        <!-- View: Saved Lists -->
+        <div id="view-saved" class="hidden flex-1 flex flex-col overflow-hidden">
+            <div class="p-4 md:p-6 flex-1 overflow-y-auto scroll-smooth">
+                 <div class="flex justify-between items-center mb-4">
+                    <h2 class="font-bold text-slate-700 text-base md:text-lg">已儲存清單</h2>
+                    <button onclick="clearSavedListsFromPage()" class="touch-btn text-sm font-bold text-slate-400 hover:text-red-500 px-3 py-2 min-h-[44px] rounded-xl">清空所有</button>
+                </div>
+                
+                <div id="saved-page-container" class="space-y-3"></div>
+            </div>
+        </div>
+
+        <!-- View: History -->
+        <div id="view-history" class="hidden flex-1 flex flex-col overflow-hidden">
+            <div class="p-4 md:p-6 flex-1 overflow-y-auto scroll-smooth">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="font-bold text-slate-700 text-base md:text-lg">歷史記錄</h2>
+                    <button onclick="clearHistory()" class="touch-btn text-sm font-bold text-slate-400 hover:text-red-500 px-3 py-2 min-h-[44px] rounded-xl">清空歷史</button>
+                </div>
+                <div id="history-container" class="space-y-3"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed left-1/2 -translate-x-1/2 text-white px-6 py-3 rounded-2xl shadow-2xl opacity-0 transition-all duration-500 z-50 font-bold flex items-center gap-2 pointer-events-none" style="bottom: max(2rem, calc(2rem + var(--sab)));">
+        <span id="toast-icon"></span> <span id="toast-msg"></span>
+    </div>
+
+    <script>
+        let items = [];
+        let history = JSON.parse(localStorage.getItem('shop_history') || '[]');
+        const DEFAULT_TARGET = 100.00;
+        let THRESHOLD = DEFAULT_TARGET;
+        let recognition;
+
+        function calculateItemPrice(item) {
+            if (!item.hasSpecial || !item.specialQty || !item.specialPrice) {
+                return item.price * item.qty;
+            }
+            const specialBundles = Math.floor(item.qty / item.specialQty);
+            const remainderQty = item.qty % item.specialQty;
+            return (specialBundles * item.specialPrice) + (remainderQty * item.price);
+        }
+
+        function calculateItemSavings(item) {
+            if (!item.hasSpecial || !item.specialQty || !item.specialPrice) return 0;
+            const regularPrice = item.price * item.qty;
+            const specialPrice = calculateItemPrice(item);
+            return regularPrice - specialPrice;
+        }
+
+        function toggleSpecialOffer() {
+            const panel = document.getElementById('special-offer-panel');
+            const arrow = document.getElementById('special-toggle-arrow');
+            const text = document.getElementById('special-toggle-text');
+            panel.classList.toggle('hidden');
+            if (panel.classList.contains('hidden')) {
+                arrow.style.transform = 'rotate(0deg)';
+                text.innerText = '優惠設定';
+            } else {
+                arrow.style.transform = 'rotate(180deg)';
+                text.innerText = '收合優惠設定';
+            }
+        }
+
+        function toggleSpecialInputs() {
+            const enabled = document.getElementById('special-enabled').checked;
+            const qtyEl = document.getElementById('special-qty');
+            const priceEl = document.getElementById('special-price');
+            
+            if (enabled) {
+                qtyEl.disabled = false;
+                priceEl.disabled = false;
+                qtyEl.classList.remove('bg-slate-100', 'text-slate-400');
+                priceEl.classList.remove('bg-slate-100', 'text-slate-400');
+            } else {
+                qtyEl.disabled = true;
+                priceEl.disabled = true;
+                qtyEl.classList.add('bg-slate-100', 'text-slate-400');
+                priceEl.classList.add('bg-slate-100', 'text-slate-400');
+            }
+        }
+
+        let currentListId = null;
+        let currentListName = '未命名清單';
+        let savedLists = [];
+
+        function loadSavedLists() {
+            try {
+                const stored = localStorage.getItem('shop_saved_lists');
+                savedLists = stored ? JSON.parse(stored) : [];
+            } catch (e) {
+                savedLists = [];
+            }
+        }
+
+        function saveSavedLists() {
+            localStorage.setItem('shop_saved_lists', JSON.stringify(savedLists.slice(0, 30)));
+        }
+
+        function loadCurrentList() {
+            try {
+                const stored = localStorage.getItem('shop_current_list');
+                if (stored) {
+                    const data = JSON.parse(stored);
+                    currentListId = data.id;
+                    currentListName = data.name || '未命名清單';
+                    THRESHOLD = data.targetAmount || DEFAULT_TARGET;
+                    items = data.items || [];
+                } else {
+                    createNewListInternal();
+                }
+            } catch (e) {
+                createNewListInternal();
+            }
+            updateCurrentListNameUI();
+            updateTargetUI();
+        }
+
+        function saveCurrentList() {
+            const total = items.reduce((s, i) => s + calculateItemPrice(i), 0);
+            const data = {
+                id: currentListId,
+                name: currentListName,
+                targetAmount: THRESHOLD,
+                updatedAt: new Date().toISOString(),
+                total: total,
+                items: [...items]
+            };
+            localStorage.setItem('shop_current_list', JSON.stringify(data));
+            
+            const existingIndex = savedLists.findIndex(l => l.id === currentListId);
+            if (existingIndex >= 0) {
+                savedLists[existingIndex] = { ...data };
+                saveSavedLists();
+            }
+        }
+
+        function createNewListInternal(name) {
+            currentListId = Date.now();
+            currentListName = name || '未命名清單';
+            THRESHOLD = DEFAULT_TARGET;
+            items = [];
+            saveCurrentList();
+            updateCurrentListNameUI();
+            updateTargetUI();
+        }
+
+        function updateCurrentListNameUI() {
+            document.getElementById('current-list-name').innerText = currentListName;
+        }
+
+        function updateTargetUI() {
+            document.getElementById('goal-text').innerText = `目標金額: $${THRESHOLD.toFixed(2)}`;
+            document.getElementById('target-input').value = THRESHOLD;
+        }
+
+        function renameCurrentList() {
+            const newName = prompt('請輸入新名稱：', currentListName);
+            if (newName !== null && newName.trim() !== '') {
+                currentListName = newName.trim();
+                
+                if (currentListId !== null) {
+                    loadSavedLists();
+                    const list = savedLists.find(l => l.id === currentListId);
+                    if (list) {
+                        list.name = currentListName;
+                        saveSavedLists();
+                        updateSavedListsPageUI();
+                    }
+                }
+                
+                saveCurrentList();
+                updateCurrentListNameUI();
+            }
+        }
+
+        function deleteSavedList(id) {
+            if (confirm('確定要刪除此清單嗎？')) {
+                loadSavedLists();
+                savedLists = savedLists.filter(l => l.id !== id);
+                saveSavedLists();
+                updateSavedListsPageUI();
+                
+                if (id === currentListId) {
+                    createNewListInternal('未命名清單');
+                }
+            }
+        }
+
+        function renameSavedList(id) {
+            loadSavedLists();
+            const list = savedLists.find(l => l.id === id);
+            if (list) {
+                const newName = prompt('請輸入新名稱：', list.name);
+                if (newName !== null && newName.trim() !== '') {
+                    list.name = newName.trim();
+                    saveSavedLists();
+                    updateSavedListsPageUI();
+                    if (id === currentListId) {
+                        currentListName = newName.trim();
+                        updateCurrentListNameUI();
+                        saveCurrentList();
+                    }
+                }
+            }
+        }
+
+        function loadSavedListFromPage(id) {
+            loadSavedList(id);
+            switchTab('current');
+        }
+
+        function copyHistoryToNewList(id) {
+            const record = history.find(h => h.id === id);
+            if (record) {
+                const newId = Date.now();
+                const newName = prompt('請輸入新清單名稱：', record.time);
+                if (newName !== null && newName.trim() !== '') {
+                    loadSavedLists();
+                    currentListId = newId;
+                    currentListName = newName.trim();
+                    THRESHOLD = record.targetAmount || DEFAULT_TARGET;
+                    items = record.list ? [...record.list] : [];
+                    saveCurrentList();
+                    
+                    savedLists.unshift({
+                        id: newId,
+                        name: currentListName,
+                        targetAmount: THRESHOLD,
+                        updatedAt: new Date().toISOString(),
+                        total: record.total,
+                        items: [...items]
+                    });
+                    saveSavedLists();
+                    
+                    updateCurrentListNameUI();
+                    updateTargetUI();
+                    updateUI();
+                    showToast('已複製為新清單', '📋', 'bg-blue-800');
+                    switchTab('current');
+                }
+            }
+        }
+
+        function updateSavedListsPageUI() {
+            const container = document.getElementById('saved-page-container');
+            if (!container) return;
+            
+            if (savedLists.length === 0) {
+                container.innerHTML = `<div class="text-center text-slate-300 py-12 text-sm italic">尚無已儲存清單</div>`;
+                return;
+            }
+            
+            container.innerHTML = savedLists.map(list => {
+                const isCurrent = list.id === currentListId;
+                const time = new Date(list.updatedAt).toLocaleString('zh-HK');
+                return `
+                    <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
+                        <div class="flex justify-between items-start mb-3">
+                            <div>
+                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">${time}</p>
+                                <p class="text-2xl font-black text-slate-800">${list.name}</p>
+                                <p class="text-lg font-bold text-blue-600 mt-1">$${(list.total || 0).toFixed(2)}</p>
+                            </div>
+                            <div class="flex gap-1">
+                                <button onclick="renameSavedList(${list.id})" class="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+                                </button>
+                                <button onclick="deleteSavedList(${list.id})" class="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="flex flex-wrap gap-2 mb-3">
+                            ${list.items ? list.items.map(i => `<span class="bg-slate-100 text-slate-600 px-2 py-1 rounded-lg text-[10px] font-bold">${i.name} x${i.qty}</span>`).join('') : ''}
+                        </div>
+                        <button onclick="loadSavedListFromPage(${list.id})" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-colors active:scale-95 flex items-center justify-center gap-2 ${isCurrent ? 'opacity-50 cursor-not-allowed' : ''}">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                            ${isCurrent ? '目前編輯中' : '載入此清單'}
+                        </button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function createNewList() {
+            const name = prompt('請輸入新清單名稱：', `清單 ${savedLists.length + 1}`);
+            if (name !== null && name.trim() !== '') {
+                loadSavedLists();
+                createNewListInternal(name.trim());
+                
+                const total = items.reduce((s, i) => s + calculateItemPrice(i), 0);
+                savedLists.unshift({
+                    id: currentListId,
+                    name: currentListName,
+                    targetAmount: THRESHOLD,
+                    updatedAt: new Date().toISOString(),
+                    total: total,
+                    items: [...items]
+                });
+                saveSavedLists();
+                
+                updateUI();
+                updateSavedListsPageUI();
+                showToast('已建立新清單', '✅', 'bg-blue-800');
+            }
+        }
+
+        function loadSavedList(id) {
+            loadSavedLists();
+            const list = savedLists.find(l => l.id === id);
+            if (list) {
+                currentListId = list.id;
+                currentListName = list.name;
+                THRESHOLD = list.targetAmount || DEFAULT_TARGET;
+                items = list.items ? [...list.items] : [];
+                saveCurrentList();
+                updateCurrentListNameUI();
+                updateTargetUI();
+                updateUI();
+            }
+        }
+
+        function promptSaveCurrentAs() {
+            const name = prompt('請輸入清單名稱：', currentListName);
+            if (name !== null && name.trim() !== '') {
+                loadSavedLists();
+                const newId = Date.now();
+                const total = items.reduce((s, i) => s + calculateItemPrice(i), 0);
+                
+                currentListId = newId;
+                currentListName = name.trim();
+                saveCurrentList();
+                
+                savedLists.unshift({
+                    id: newId,
+                    name: currentListName,
+                    targetAmount: THRESHOLD,
+                    updatedAt: new Date().toISOString(),
+                    total: total,
+                    items: [...items]
+                });
+                saveSavedLists();
+                
+                updateCurrentListNameUI();
+                updateSavedListsPageUI();
+                showToast('已儲存清單', '💾', 'bg-blue-800');
+            }
+        }
+
+        function closeAllPanels() {
+            const settingsPanel = document.getElementById('settings-panel');
+            if (settingsPanel && !settingsPanel.classList.contains('hidden')) {
+                settingsPanel.classList.add('hidden');
+            }
+        }
+
+        window.onload = () => { 
+            loadSavedLists();
+            loadCurrentList();
+            updateUI(); 
+            updateHistoryUI(); 
+            
+            document.addEventListener('click', (e) => {
+                const settingsBtn = e.target.closest('[onclick*="toggleSettings"]');
+                const settingsPanel = document.getElementById('settings-panel');
+                let clickedInsideSettingsPanel = settingsPanel && settingsPanel.contains(e.target);
+                
+                if (!settingsBtn && !clickedInsideSettingsPanel) {
+                    closeAllPanels();
+                }
+            });
+        };
+
+        function clearSavedListsFromPage() {
+            if (confirm('確定要清空所有已儲存清單嗎？')) {
+                loadSavedLists();
+                savedLists = [];
+                saveSavedLists();
+                updateSavedListsPageUI();
+                
+                createNewListInternal('未命名清單');
+            }
+        }
+
+        function switchTab(view) {
+            const tabs = ['current', 'compare', 'saved', 'history'];
+            tabs.forEach(t => {
+                const btn = document.getElementById(`tab-${t}`);
+                const v = document.getElementById(`view-${t}`);
+                if (t === view) {
+                    btn.className = "flex-1 py-4 text-sm font-bold text-blue-600 border-b-2 border-blue-600 tab-transition";
+                    v.classList.remove('hidden');
+                } else {
+                    btn.className = "flex-1 py-4 text-sm font-bold text-slate-400 hover:text-slate-600 tab-transition";
+                    v.classList.add('hidden');
+                }
+            });
+            if (view === 'history') updateHistoryUI();
+            if (view === 'saved') {
+                loadSavedLists();
+                updateSavedListsPageUI();
+            }
+        }
+
+        function addItem() {
+            const nameEl = document.getElementById('item-name');
+            const priceEl = document.getElementById('item-price');
+            const qtyEl = document.getElementById('item-qty');
+            const specialEnabled = document.getElementById('special-enabled').checked;
+            const specialQtyEl = document.getElementById('special-qty');
+            const specialPriceEl = document.getElementById('special-price');
+            
+            const price = parseFloat(priceEl.value);
+            const qty = parseInt(qtyEl.value) || 1;
+            const specialQty = specialEnabled ? parseInt(specialQtyEl.value) : null;
+            const specialPrice = specialEnabled ? parseFloat(specialPriceEl.value) : null;
+
+            if (isNaN(price) || price <= 0) {
+                showToast('請輸入價格', '⚠️', 'bg-red-500');
+                return;
+            }
+
+            if (specialEnabled && (isNaN(specialQty) || specialQty < 2 || isNaN(specialPrice) || specialPrice <= 0)) {
+                showToast('請輸入有效的優惠設定', '⚠️', 'bg-red-500');
+                return;
+            }
+
+            const currentTotal = items.reduce((s, i) => s + calculateItemPrice(i), 0);
+            const newItem = { 
+                name: nameEl.value.trim() || `項目 ${items.length + 1}`, 
+                price: price, 
+                qty: qty,
+                hasSpecial: specialEnabled,
+                specialQty: specialQty,
+                specialPrice: specialPrice
+            };
+            items.push(newItem);
+
+            const newItemTotal = calculateItemPrice(newItem);
+            if (currentTotal < THRESHOLD && (currentTotal + newItemTotal) >= THRESHOLD) {
+                showToast('恭喜！已達到優惠門檻', '🎉', 'bg-green-600');
+            }
+
+            nameEl.value = ''; priceEl.value = ''; qtyEl.value = '1'; 
+            document.getElementById('special-enabled').checked = false;
+            specialQtyEl.value = '2';
+            specialPriceEl.value = '';
+            toggleSpecialInputs();
+            nameEl.focus();
+            saveCurrentList();
+            updateUI();
+        }
+
+        function updateQty(index, delta) {
+            const prevTotal = items.reduce((s, i) => s + calculateItemPrice(i), 0);
+            if (items[index].qty + delta > 0) items[index].qty += delta;
+            const newTotal = items.reduce((s, i) => s + calculateItemPrice(i), 0);
+            if (prevTotal < THRESHOLD && newTotal >= THRESHOLD) showToast('已達標！', '🎉', 'bg-green-600');
+            saveCurrentList();
+            updateUI();
+        }
+
+        function updateUI() {
+            const container = document.getElementById('items-container');
+            const total = items.reduce((s, i) => s + calculateItemPrice(i), 0);
+            document.getElementById('item-count').innerText = items.length;
+            document.getElementById('display-total').innerText = `$${total.toFixed(2)}`;
+            document.getElementById('footer-action').classList.toggle('hidden', items.length === 0);
+
+            if (items.length === 0) {
+                container.innerHTML = `<div class="text-center text-slate-300 py-12 text-sm italic">購物清單為空</div>`;
+            } else {
+                container.innerHTML = items.map((item, i) => {
+                    const itemTotal = calculateItemPrice(item);
+                    const savings = calculateItemSavings(item);
+                    const regularTotal = item.price * item.qty;
+                    
+                    let priceLine = `<p class="text-xs text-slate-400 font-medium">$${item.price.toFixed(1)} / 件</p>`;
+                    let totalLine = `<span class="font-black text-base text-slate-800">$${itemTotal.toFixed(1)}</span>`;
+                    
+                    if (item.hasSpecial && item.specialQty && item.specialPrice) {
+                        priceLine = `
+                            <p class="text-xs text-slate-400 font-medium">$${item.price.toFixed(1)} / 件</p>
+                            <p class="text-xs text-green-600 font-bold">買${item.specialQty}件$${item.specialPrice.toFixed(0)}</p>
+                        `;
+                        
+                        if (savings > 0) {
+                            totalLine = `
+                                <div class="text-right">
+                                    <span class="font-black text-base text-slate-800">$${itemTotal.toFixed(1)}</span>
+                                    <p class="text-[10px] text-green-600 font-bold">-$${savings.toFixed(1)}</p>
+                                </div>
+                            `;
+                        } else if (savings < 0) {
+                            totalLine = `
+                                <div class="text-right">
+                                    <span class="font-black text-base text-slate-800">$${itemTotal.toFixed(1)}</span>
+                                </div>
+                            `;
+                        }
+                    }
+                    
+                     return `
+                    <div class="flex justify-between items-center bg-white p-3 md:p-4 rounded-2xl border border-slate-100 shadow-sm gap-2 md:gap-3">
+                        <div class="flex-1 min-w-0">
+                            <button onclick="renameItem(${i})" class="text-left hover:text-blue-600 transition-colors min-w-0">
+                                <p class="font-bold text-slate-800 text-base truncate">${item.name}</p>
+                            </button>
+                            ${priceLine}
+                        </div>
+                        <div class="flex items-center bg-slate-100 rounded-xl p-1 shrink-0">
+                            <button onclick="updateQty(${i}, -1)" class="touch-btn-sm p-3 text-slate-500 active:bg-slate-200 rounded-lg min-w-[44px] min-h-[44px]">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                            </button>
+                            <span class="w-10 text-center text-sm md:text-base font-black text-slate-700">${item.qty}</span>
+                            <button onclick="updateQty(${i}, 1)" class="touch-btn-sm p-3 text-slate-500 active:bg-slate-200 rounded-lg min-w-[44px] min-h-[44px]">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                            </button>
+                        </div>
+                        <div class="min-w-[60px]">
+                            ${totalLine}
+                        </div>
+                        <button onclick="removeItem(${i})" class="touch-btn-sm p-3 text-slate-300 hover:text-red-500 shrink-0 min-w-[44px] min-h-[44px]">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        </button>
+                    </div>
+                `}).join('');
+            }
+
+            const p = Math.min((total / THRESHOLD) * 100, 100);
+            const bar = document.getElementById('progress-bar');
+            const remText = document.getElementById('remaining-text');
+            const badge = document.getElementById('status-badge');
+            bar.style.width = `${p}%`;
+            
+            if (total >= THRESHOLD) {
+                bar.className = "bg-green-500 h-full transition-all duration-500 ease-out";
+                badge.className = 'px-3 py-1 rounded-full text-[10px] font-bold bg-green-100 text-green-600';
+                badge.innerText = '已達標';
+                remText.innerHTML = `<span class="text-green-600 font-bold">已達標！超額 $${(total-THRESHOLD).toFixed(2)}</span>`;
+            } else {
+                bar.className = "bg-blue-500 h-full transition-all duration-500 ease-out";
+                badge.className = 'px-3 py-1 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500';
+                badge.innerText = '未達標';
+                remText.innerHTML = total > 0 ? `還差 <span class="text-blue-600 font-bold">$${(THRESHOLD-total).toFixed(2)}</span>` : '請輸入商品';
+            }
+        }
+
+        function calculateComparison() {
+            const ap = parseFloat(document.getElementById('comp-a-price').value);
+            const au = parseFloat(document.getElementById('comp-a-unit').value);
+            const bp = parseFloat(document.getElementById('comp-b-price').value);
+            const bu = parseFloat(document.getElementById('comp-b-unit').value);
+
+            const cardA = document.getElementById('card-a');
+            const cardB = document.getElementById('card-b');
+            const resDiv = document.getElementById('compare-result');
+            const winTxt = document.getElementById('winner-text');
+            const winDiff = document.getElementById('winner-diff');
+
+            if (!ap || !au || !bp || !bu) {
+                showToast('請填寫所有欄位', '⚠️', 'bg-red-500');
+                return;
+            }
+
+            const valA = ap / au;
+            const valB = bp / bu;
+
+            resDiv.classList.remove('hidden');
+            cardA.classList.remove('winner-card');
+            cardB.classList.remove('winner-card');
+
+            if (valA < valB) {
+                cardA.classList.add('winner-card');
+                winTxt.innerText = "商品 A 更划算！";
+                winDiff.innerText = `比商品 B 便宜了約 ${((valB - valA) / valB * 100).toFixed(1)}%`;
+            } else if (valB < valA) {
+                cardB.classList.add('winner-card');
+                winTxt.innerText = "商品 B 更划算！";
+                winDiff.innerText = `比商品 A 便宜了約 ${((valA - valB) / valA * 100).toFixed(1)}%`;
+            } else {
+                winTxt.innerText = "兩者性價比相同";
+                winDiff.innerText = "";
+            }
+        }
+
+        function resetComparison() {
+            document.querySelectorAll('#view-compare input').forEach(i => i.value = '');
+            document.getElementById('card-a').classList.remove('winner-card');
+            document.getElementById('card-b').classList.remove('winner-card');
+            document.getElementById('compare-result').classList.add('hidden');
+        }
+
+        function saveCurrentToHistory() {
+            if (items.length === 0) return;
+            history.unshift({
+                id: Date.now(),
+                time: new Date().toLocaleString('zh-HK'),
+                targetAmount: THRESHOLD,
+                total: items.reduce((s, i) => s + calculateItemPrice(i), 0),
+                list: [...items]
+            });
+            localStorage.setItem('shop_history', JSON.stringify(history.slice(0, 30)));
+            
+            loadSavedLists();
+            const savedIndex = savedLists.findIndex(l => l.id === currentListId);
+            if (savedIndex >= 0) {
+                savedLists.splice(savedIndex, 1);
+                saveSavedLists();
+            }
+            
+            items = [];
+            saveCurrentList();
+            showToast('已儲存到歷史', '💾', 'bg-blue-800');
+            updateUI();
+            switchTab('history');
+        }
+
+        function updateHistoryUI() {
+            const container = document.getElementById('history-container');
+            if (history.length === 0) {
+                container.innerHTML = `<div class="text-center text-slate-300 py-12 text-sm italic">尚無記錄</div>`;
+                return;
+            }
+            container.innerHTML = history.map(h => `
+                <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
+                    <div class="flex justify-between items-start mb-3">
+                        <div>
+                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">${h.time}</p>
+                            <p class="text-2xl font-black text-slate-800">$${h.total.toFixed(2)}</p>
+                        </div>
+                        <div class="flex gap-1">
+                            <button onclick="copyHistoryToNewList(${h.id})" class="p-2 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center" title="複製為新清單">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                            </button>
+                            <button onclick="deleteRecord(${h.id})" class="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap gap-2 mb-3">
+                        ${h.list.map(i => `<span class="bg-slate-100 text-slate-600 px-2 py-1 rounded-lg text-[10px] font-bold">${i.name} x${i.qty}</span>`).join('')}
+                    </div>
+                    <button onclick="copyHistoryToNewList(${h.id})" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-colors active:scale-95">
+                        📋 複製為新清單
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function deleteRecord(id) {
+            history = history.filter(x => x.id !== id);
+            localStorage.setItem('shop_history', JSON.stringify(history));
+            updateHistoryUI();
+        }
+
+        function clearHistory() { if(confirm('確定要清空所有歷史記錄嗎？')) { history = []; localStorage.removeItem('shop_history'); updateHistoryUI(); } }
+        function removeItem(i) { items.splice(i, 1); saveCurrentList(); updateUI(); }
+
+        function renameItem(index) {
+            if (!items[index]) return;
+            const newName = prompt('請輸入新名稱：', items[index].name);
+            if (newName !== null && newName.trim() !== '') {
+                items[index].name = newName.trim();
+                saveCurrentList();
+                updateUI();
+            }
+        }
+        function clearAll() { items = []; saveCurrentList(); updateUI(); }
+        function toggleSettings() { document.getElementById('settings-panel').classList.toggle('hidden'); }
+        function saveTarget() {
+            const v = parseFloat(document.getElementById('target-input').value);
+            if (v > 0) { 
+                THRESHOLD = v; 
+                updateTargetUI(); 
+                toggleSettings(); 
+                saveCurrentList();
+                updateUI(); 
+            }
+        }
+
+        function showToast(msg, icon, color) {
+            const t = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = msg;
+            document.getElementById('toast-icon').innerText = icon;
+            t.className = `fixed bottom-8 left-1/2 -translate-x-1/2 text-white px-6 py-3 rounded-2xl shadow-2xl z-50 font-bold flex items-center gap-2 pointer-events-none transition-all duration-500 ${color}`;
+            t.style.opacity = '1'; t.style.transform = 'translateY(0) translateX(-50%)';
+            setTimeout(() => { t.style.opacity = '0'; t.style.transform = 'translateY(20px) translateX(-50%)'; }, 3000);
+        }
+
+        // Voice Support
+        if ('webkitSpeechRecognition' in window) {
+            recognition = new webkitSpeechRecognition();
+            recognition.lang = 'zh-HK';
+            recognition.onstart = () => document.getElementById('mic-btn').classList.add('text-red-500', 'pulse-mic');
+            recognition.onend = () => document.getElementById('mic-btn').classList.remove('text-red-500', 'pulse-mic');
+            recognition.onresult = (e) => {
+                const t = e.results[0][0].transcript;
+                const m = t.match(/(\d+(\.\d+)?)/);
+                if(m) { 
+                    document.getElementById('item-price').value = m[1]; 
+                    document.getElementById('item-name').value = t.replace(m[0], '').trim(); 
+                } else { 
+                    document.getElementById('item-name').value = t; 
+                }
+            };
+        }
+        function toggleVoice() { if(recognition) recognition.start(); }
+    </script>
+</body>
+</html>
