@@ -2,7 +2,7 @@
   "meta": {
     "title": "Codeguy's Toolkit",
     "subtitle": "個人小工具入口",
-    "lastUpdated": "2026-05-13"
+    "lastUpdated": "2026-05-14"
   },
   "categories": [
     {
@@ -113,6 +113,24 @@
           "status": "active",
           "featured": false,
           "tags": ["選擇權", "投資", "策略分析"]
+        }
+      ]
+    },
+    {
+      "id": "life",
+      "name": "生活",
+      "icon": "check-circle",
+      "apps": [
+        {
+          "id": "life-tracker",
+          "name": "Life Tracker",
+          "description": "生活日誌追蹤器、多類別、日曆與Timeline雙模式、自訂類別、JSON匯入匯出",
+          "path": "https://codeguy0425.github.io/lifetracker/index_backup.html",
+          "icon": "check-circle",
+          "color": "emerald",
+          "status": "active",
+          "featured": true,
+          "tags": ["生活", "日誌", "追蹤", "生產力", "localStorage"]
         }
       ]
     },
