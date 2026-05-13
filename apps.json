@@ -102,6 +102,17 @@
           "color": "emerald",
           "status": "idea",
           "tags": ["投資", "報酬率", "複利"]
+        },
+        {
+          "id": "bull-put-spread",
+          "name": "選擇權策略分析",
+          "description": "選擇權策略分析工具",
+          "path": "https://codeguy0425.github.io/invest/",
+          "icon": "trending-up",
+          "color": "emerald",
+          "status": "active",
+          "featured": false,
+          "tags": ["選擇權", "投資", "策略分析"]
         }
       ]
     },
