@@ -1,0 +1,120 @@
+{
+  "meta": {
+    "title": "Codeguy's Toolbox",
+    "subtitle": "個人小工具入口",
+    "lastUpdated": "2026-05-13"
+  },
+  "categories": [
+    {
+      "id": "calculators",
+      "name": "計算工具",
+      "icon": "calculator",
+      "apps": [
+        {
+          "id": "shopping",
+          "name": "購物助手",
+          "description": "優惠計算、目標金額、多清單管理、語音輸入",
+          "path": "shopping.html",
+          "icon": "shopping-bag",
+          "color": "blue",
+          "status": "active",
+          "featured": true,
+          "tags": ["購物", "優惠", "localStorage"]
+        },
+        {
+          "id": "hotpot",
+          "name": "咕嚕咕嚕 - 火鍋計時大師",
+          "description": "火鍋食材計時器、自訂食譜、多計時器同時運行、完成時有音效與震動提醒",
+          "path": "hotpot.html",
+          "icon": "clock",
+          "color": "orange",
+          "status": "active",
+          "featured": true,
+          "tags": ["火鍋", "計時器", "烹飪", "localStorage", "音效"]
+        },
+        {
+          "id": "hotpot-online",
+          "name": "咕嚕咕嚕（線上版）",
+          "description": "火鍋食材計時器線上版本、可愛卡通風格、預設食材：牛柏葉(7分鐘)、鮮沙白(3分鐘)、Q鮑魚(5分鐘)、滑烏冬(5分鐘)",
+          "path": "https://codeguy-hotpot.s3.ap-east-1.amazonaws.com/index.html",
+          "icon": "clock",
+          "color": "orange",
+          "status": "active",
+          "featured": false,
+          "tags": ["火鍋", "計時器", "烹飪", "外部連結", "Web Audio", "震動"]
+        },
+        {
+          "id": "tip-calculator",
+          "name": "小費計算機",
+          "description": "快速計算小費、平分帳單",
+          "path": "tools/tip.html",
+          "icon": "percent",
+          "color": "green",
+          "status": "coming",
+          "tags": ["餐廳", "小費", "平分"]
+        }
+      ]
+    },
+    {
+      "id": "productivity",
+      "name": "生產力",
+      "icon": "check-circle",
+      "apps": [
+        {
+          "id": "todo",
+          "name": "待辦清單",
+          "description": "簡單的任務追蹤器",
+          "path": "tools/todo.html",
+          "icon": "list",
+          "color": "orange",
+          "status": "idea",
+          "tags": ["任務", "追蹤", "GTD"]
+        },
+        {
+          "id": "pomodoro",
+          "name": "番茄鐘",
+          "description": "25/5 專注計時器",
+          "path": "tools/pomodoro.html",
+          "icon": "clock",
+          "color": "red",
+          "status": "idea",
+          "tags": ["專注", "計時", "生產力"]
+        }
+      ]
+    },
+    {
+      "id": "converters",
+      "name": "單位轉換",
+      "icon": "arrow-left-right",
+      "apps": [
+        {
+          "id": "unit-converter",
+          "name": "萬用轉換器",
+          "description": "長度、重量、溫度等單位轉換",
+          "path": "tools/convert.html",
+          "icon": "arrow-left-right",
+          "color": "purple",
+          "status": "coming",
+          "tags": ["轉換", "單位", "公制"]
+        }
+      ]
+    },
+    {
+      "id": "finance",
+      "name": "理財工具",
+      "icon": "wallet",
+      "apps": [
+        {
+          "id": "investment",
+          "name": "投資報酬計算",
+          "description": "ROI、複利計算",
+          "path": "tools/invest.html",
+          "icon": "trending-up",
+          "color": "emerald",
+          "status": "idea",
+          "tags": ["投資", "報酬率", "複利"]
+        }
+      ]
+    }
+  ]
+}
