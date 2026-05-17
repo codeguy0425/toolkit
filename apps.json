@@ -149,6 +149,17 @@
           "status": "active",
           "featured": true,
           "tags": ["吉他", "音樂", "音階"]
+        },
+        {
+          "id": "mega-lucario-guide",
+          "name": "超級路卡利歐ex 完全攻略",
+          "description": "Pokémon TCG 超級路卡利歐ex 牌組攻略、傷害試算、對戰分析、牌組構成、操作技巧（H-on 環境）",
+          "path": "https://d3s5c0c9hfhda8.cloudfront.net/",
+          "icon": "grid",
+          "color": "red",
+          "status": "active",
+          "featured": false,
+          "tags": ["Pokémon", "寶可夢", "TCG", "牌組", "攻略"]
         }
       ]
     }
