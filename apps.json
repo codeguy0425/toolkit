@@ -131,6 +131,17 @@
           "status": "active",
           "featured": true,
           "tags": ["生活", "日誌", "追蹤", "生產力", "localStorage"]
+        },
+        {
+          "id": "parking-hk",
+          "name": "泊車 HK",
+          "description": "記錄泊車時間、估算費用、保存記錄、支援多停車場費率、公眾假期管理、相片拍攝、匯出功能",
+          "path": "https://codeguy0425.github.io/parking/",
+          "icon": "clock",
+          "color": "blue",
+          "status": "active",
+          "featured": false,
+          "tags": ["泊車", "停車場", "費用計算", "記錄", "生活"]
         }
       ]
     },
