@@ -2,7 +2,7 @@
   "meta": {
     "title": "Codeguy's Toolkit",
     "subtitle": "個人小工具入口",
-    "lastUpdated": "2026-05-14"
+    "lastUpdated": "2026-05-27"
   },
   "categories": [
     {
@@ -171,6 +171,17 @@
           "status": "active",
           "featured": false,
           "tags": ["Pokémon", "寶可夢", "TCG", "牌組", "攻略"]
+        },
+        {
+          "id": "rubiks-cube-guide",
+          "name": "Codeguy Cubing - 扭計骰指南",
+          "description": "Rubik's Cube 完整教學：初學者層層法、CFOP 進階、2-Look OLL/PLL 共 16 演算法、高階技巧、指法優化、彩中立即可用",
+          "path": "https://codeguy0425.github.io/rubiks-cube-guide/index.html#twolook",
+          "icon": "grid",
+          "color": "purple",
+          "status": "active",
+          "featured": false,
+          "tags": ["扭計骰", "Rubik's Cube", "教學", "CFOP", "演算法", "娛樂"]
         }
       ]
     }
