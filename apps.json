@@ -176,7 +176,7 @@
           "id": "rubiks-cube-guide",
           "name": "Codeguy Cubing - 扭計骰指南",
           "description": "Rubik's Cube 完整教學：初學者層層法、CFOP 進階、2-Look OLL/PLL 共 16 演算法、高階技巧、指法優化、彩中立即可用",
-          "path": "https://codeguy0425.github.io/rubiks-cube-guide/index.html#twolook",
+          "path": "https://codeguy0425.github.io/rubiks-cube-guide/index.html",
           "icon": "grid",
           "color": "purple",
           "status": "active",
