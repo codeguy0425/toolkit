@@ -43,7 +43,7 @@ tools/
 ### 強制規範
 1. **單一 HTML 檔案**：每個 app 是單一 .html 檔案，無外部依賴（除了 CDN）
 2. **Tailwind CSS CDN**：使用 `https://cdn.tailwindcss.com`
-3. **Google Fonts**：Inter + Noto Sans TC + Nunito（選擇性）
+3. **Google Fonts**：Figtree + DM Sans + Noto Sans TC（+ Roboto Mono 代碼）
 4. **最小觸控目標**：所有按鈕保證最小 **44x44px**
 5. **Safe Area 支援**：必須處理 iOS 的 notch 和動態島
 6. **繁體中文 UI**：預設使用 zh-HK 語系
@@ -251,9 +251,27 @@ tools/
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>App 名稱</title>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        display: ['Figtree', 'Noto Sans TC', 'sans-serif'],
+                        body: ['DM Sans', 'Noto Sans TC', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'tf-subtle': '0 1px 3px rgba(0,0,0,0.06)',
+                        'tf-medium': '0 4px 12px rgba(0,0,0,0.08)',
+                        'tf-large': '0 8px 24px rgba(0,0,0,0.12)',
+                        'tf-overlay': '0 16px 48px rgba(0,0,0,0.18)',
+                    }
+                }
+            }
+        }
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&family=Nunito:wght@700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Figtree:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&family=Roboto+Mono:wght@400&display=swap');
         
         :root {
             --sat: env(safe-area-inset-top, 0px);
@@ -263,8 +281,8 @@ tools/
         }
         
         body {
-            font-family: 'Inter', 'Noto Sans TC', sans-serif;
-            background-color: #f1f5f9;
+            font-family: 'DM Sans', 'Noto Sans TC', sans-serif;
+            background-color: #f9fafb;
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
             -webkit-touch-callout: none;
@@ -312,7 +330,7 @@ tools/
                     <circle cx="12" cy="12" r="10"></circle>
                     <polyline points="12 6 12 12 16 14"></polyline>
                 </svg>
-                <h1 class="text-xl md:text-2xl font-extrabold" style="font-family: 'Nunito', 'Noto Sans TC', sans-serif;">App 名稱</h1>
+                <h1 class="text-xl md:text-2xl font-extrabold" style="font-family: 'Figtree', 'Noto Sans TC', sans-serif;">App 名稱</h1>
             </div>
         </div>
 
@@ -360,26 +378,33 @@ tools/
 
 ## UI 設計模式（參考 shopping.html）
 
-### 顏色系統
+### 顏色系統（TouchFlow）
 | 用途 | Class |
 |------|-------|
 | 主要 Header/按鈕 | `bg-blue-600` |
 | Hover 狀態 | `hover:bg-blue-700` |
-| 成功/已達標 | `bg-green-500` / `text-green-600` |
+| 成功/已達標 | `bg-emerald-400` / `text-emerald-600` |
 | 警示/刪除 | `bg-red-500` / `text-red-500` |
-| 中性背景 | `bg-slate-100` |
+| 中性背景 | `bg-slate-50` |
 | 次要文字 | `text-slate-400` |
 | 主要文字 | `text-slate-800` |
 
-### 圓角系統
+### 圓角系統（TouchFlow）
 | 用途 | Class | 像素 |
 |------|-------|------|
-| 最外層容器（手機） | `rounded-[2rem]` | 32px |
-| 最外層容器（桌面） | `rounded-[2.5rem]` | 40px |
-| 大卡片 | `rounded-3xl` | 24px |
-| 中卡片/面板 | `rounded-2xl` | 16px |
+| 外層容器 | `rounded-3xl` | 24px |
+| 大卡片/面板 | `rounded-2xl` | 16px |
 | 按鈕/輸入框 | `rounded-xl` | 12px |
-| 標籤 Badge | `rounded-lg` 或 `rounded-full` | 8px 或圓形 |
+| 小標籤 Badge | `rounded-lg` | 8px |
+| 全圓 | `rounded-full` | 9999px |
+
+### 陰影系統（TouchFlow）
+| 用途 | Class | 數值 |
+|------|-------|------|
+| 靜止卡片 | `shadow-tf-subtle` | 0 1px 3px rgba(0,0,0,0.06) |
+| 浮起按鈕 | `shadow-tf-medium` | 0 4px 12px rgba(0,0,0,0.08) |
+| Modal/Toast | `shadow-tf-large` | 0 8px 24px rgba(0,0,0,0.12) |
+| 覆蓋層 | `shadow-tf-overlay` | 0 16px 48px rgba(0,0,0,0.18) |
 
 ### 間距系統
 | 用途 | Class |
@@ -390,10 +415,10 @@ tools/
 | Flex 間距 | `gap-2`, `gap-3` |
 | 垂直間距 | `space-y-3`, `space-y-4`, `space-y-6` |
 
-### 字體系統
+### 字體系統（TouchFlow）
 | 用途 | Class | 字重 |
 |------|-------|------|
-| 標題（Nunito） | `text-xl md:text-2xl` | `font-extrabold` |
+| 標題（Figtree） | `text-xl md:text-2xl` | `font-extrabold` |
 | 卡片標題 | `text-base` | `font-bold` |
 | 金額/數字 | `text-lg` 或 `text-2xl` | `font-black` |
 | 內文 | `text-base` | 一般 |
@@ -403,7 +428,7 @@ tools/
 ### 按鈕模式
 **主要 CTA 按鈕：**
 ```html
-<button class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 min-h-[56px] rounded-2xl shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2">
+<button class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 min-h-[56px] rounded-2xl shadow-tf-medium active:scale-95 transition-all flex items-center justify-center gap-2">
     <svg>...</svg>
     按鈕文字
 </button>

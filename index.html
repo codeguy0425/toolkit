@@ -4,9 +4,27 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Codeguy's Toolkit</title>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        display: ['Figtree', 'Noto Sans TC', 'sans-serif'],
+                        body: ['DM Sans', 'Noto Sans TC', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'tf-subtle': '0 1px 3px rgba(0,0,0,0.06)',
+                        'tf-medium': '0 4px 12px rgba(0,0,0,0.08)',
+                        'tf-large': '0 8px 24px rgba(0,0,0,0.12)',
+                        'tf-overlay': '0 16px 48px rgba(0,0,0,0.18)',
+                    }
+                }
+            }
+        }
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&family=Nunito:wght@700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Figtree:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&family=Roboto+Mono:wght@400&display=swap');
         
         :root {
             --sat: env(safe-area-inset-top, 0px);
@@ -16,8 +34,8 @@
         }
         
         body {
-            font-family: 'Inter', 'Noto Sans TC', sans-serif;
-            background-color: #f1f5f9;
+            font-family: 'DM Sans', 'Noto Sans TC', sans-serif;
+            background-color: #f9fafb;
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
             -webkit-touch-callout: none;
@@ -60,12 +78,12 @@
         }
         
         .app-card {
-            transition: all 0.2s ease;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
         .app-card:hover:not(.app-disabled) {
             transform: translateY(-2px);
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
         }
         
         .app-card.app-disabled {
@@ -74,7 +92,7 @@
     </style>
 </head>
 <body class="overflow-x-hidden">
-    <div class="max-w-md mx-auto bg-white rounded-[2rem] md:rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-200 flex flex-col min-h-[95vh] min-h-[95dvh]">
+    <div class="max-w-md mx-auto bg-white rounded-3xl shadow-tf-large overflow-hidden border border-slate-200 flex flex-col min-h-[95vh] min-h-[95dvh]">
         
         <!-- Header -->
         <div class="bg-blue-600 p-6 text-white shrink-0">
@@ -85,7 +103,7 @@
                     <rect x="3" y="14" width="7" height="7" rx="1"></rect>
                     <rect x="14" y="14" width="7" height="7" rx="1"></rect>
                 </svg>
-                <h1 class="text-2xl font-extrabold" style="font-family: 'Nunito', 'Noto Sans TC', sans-serif;">Codeguy's Toolkit</h1>
+                <h1 class="text-2xl font-extrabold" style="font-family: 'Figtree', 'Noto Sans TC', sans-serif;">Codeguy's Toolkit</h1>
             </div>
             <p class="text-blue-100 text-sm opacity-90" id="subtitle">個人小工具入口</p>
         </div>
@@ -98,7 +116,7 @@
     </div>
 
     <!-- Toast Notification -->
-    <div id="toast" class="fixed left-1/2 -translate-x-1/2 text-white px-6 py-3 rounded-2xl shadow-2xl opacity-0 transition-all duration-500 z-50 font-bold flex items-center gap-2 pointer-events-none" style="bottom: max(2rem, calc(2rem + var(--sab)));">
+    <div id="toast" class="fixed left-1/2 -translate-x-1/2 text-white px-6 py-3 rounded-2xl shadow-tf-large opacity-0 transition-all duration-500 z-50 font-bold flex items-center gap-2 pointer-events-none" style="bottom: max(2rem, calc(2rem + var(--sab)));">
         <span id="toast-icon"></span> <span id="toast-msg"></span>
     </div>
 
@@ -120,12 +138,12 @@
         };
 
         const colorMap = {
-            "blue": { bg: "bg-blue-100", text: "text-blue-600", border: "border-blue-200", hoverBg: "hover:bg-blue-50" },
-            "green": { bg: "bg-green-100", text: "text-green-600", border: "border-green-200", hoverBg: "hover:bg-green-50" },
-            "orange": { bg: "bg-orange-100", text: "text-orange-600", border: "border-orange-200", hoverBg: "hover:bg-orange-50" },
-            "red": { bg: "bg-red-100", text: "text-red-600", border: "border-red-200", hoverBg: "hover:bg-red-50" },
-            "purple": { bg: "bg-purple-100", text: "text-purple-600", border: "border-purple-200", hoverBg: "hover:bg-purple-50" },
-            "emerald": { bg: "bg-emerald-100", text: "text-emerald-600", border: "border-emerald-200", hoverBg: "hover:bg-emerald-50" }
+            "blue": { bg: "bg-blue-50", text: "text-blue-600", border: "border-blue-200", hoverBg: "hover:bg-blue-100" },
+            "green": { bg: "bg-emerald-50", text: "text-emerald-600", border: "border-emerald-200", hoverBg: "hover:bg-emerald-100" },
+            "orange": { bg: "bg-orange-50", text: "text-orange-600", border: "border-orange-200", hoverBg: "hover:bg-orange-100" },
+            "red": { bg: "bg-red-50", text: "text-red-500", border: "border-red-200", hoverBg: "hover:bg-red-100" },
+            "purple": { bg: "bg-purple-50", text: "text-purple-600", border: "border-purple-200", hoverBg: "hover:bg-purple-100" },
+            "emerald": { bg: "bg-emerald-50", text: "text-emerald-600", border: "border-emerald-200", hoverBg: "hover:bg-emerald-100" }
         };
 
         function getStatusBadge(status) {
@@ -133,7 +151,7 @@
                 case "coming":
                     return `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-600 border border-blue-200">即將推出</span>`;
                 case "idea":
-                    return `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-600 border border-amber-200">想法中</span>`;
+                    return `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-orange-50 text-orange-600 border border-orange-200">想法中</span>`;
                 case "featured":
                 case "active":
                 default:
@@ -149,10 +167,10 @@
             const colors = colorMap[app.color] || colorMap["blue"];
             const clickable = isAppClickable(app.status);
             const statusBadge = getStatusBadge(app.status);
-            const featuredBadge = app.featured ? `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-yellow-50 text-yellow-700 border border-yellow-200 mr-1">⭐ 精選</span>` : "";
+            const featuredBadge = app.featured ? `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200 mr-1">⭐ 精選</span>` : "";
             
             return `
-                <div class="app-card bg-white p-4 rounded-2xl border ${colors.border} shadow-sm ${clickable ? `${colors.hoverBg} cursor-pointer` : 'app-disabled'}" 
+                <div class="app-card bg-white p-4 rounded-2xl border ${colors.border} shadow-tf-subtle ${clickable ? `${colors.hoverBg} cursor-pointer` : 'app-disabled'}" 
                      ${clickable ? `onclick="openApp('${app.path}')"` : ''}>
                     <div class="flex items-start gap-3">
                         <div class="p-3 rounded-xl ${colors.bg} ${colors.text} shrink-0">
@@ -169,7 +187,7 @@
                             <p class="text-xs text-slate-500 leading-relaxed">${app.description}</p>
                             ${app.tags && app.tags.length > 0 ? `
                                 <div class="flex flex-wrap gap-1 mt-2">
-                                    ${app.tags.map(tag => `<span class="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-lg font-medium">${tag}</span>`).join('')}
+                                    ${app.tags.map(tag => `<span class="text-[10px] bg-slate-50 text-slate-500 px-2 py-0.5 rounded-lg font-medium">${tag}</span>`).join('')}
                                 </div>
                             ` : ''}
                         </div>
@@ -188,7 +206,7 @@
             return `
                 <section>
                     <div class="flex items-center gap-2 mb-3">
-                        <div class="p-2 rounded-xl bg-slate-100 text-slate-600">
+                        <div class="p-2 rounded-xl bg-slate-50 text-slate-600">
                             ${icons[category.icon] || icons["grid"]}
                         </div>
                         <h2 class="font-bold text-slate-700 text-base md:text-lg">${category.name}</h2>
@@ -220,8 +238,8 @@
                     
                     if (featuredApps.length > 0) {
                         html += `
-                            <section class="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-2xl border border-blue-100">
-                                <h2 class="font-bold text-slate-700 text-sm mb-3 uppercase tracking-wider opacity-70">✨ 精選工具</h2>
+                            <section class="bg-gradient-to-br from-blue-50 to-sky-50 p-4 rounded-2xl border border-blue-100">
+                                <h2 class="font-bold text-slate-700 text-sm mb-3 uppercase tracking-wider opacity-70">⭐ 精選工具</h2>
                                 <div class="space-y-3">
                                     ${featuredApps.map(app => renderAppCard(app)).join('')}
                                 </div>
@@ -329,7 +347,7 @@
                     ]
                 };
                 renderUI();
-                showToast("使用離線模式", "📁", "bg-orange-500");
+                showToast("使用離線模式", "📁", "bg-amber-500");
             }
         }
 
