@@ -10,17 +10,28 @@
       "name": "計算工具",
       "icon": "calculator",
       "apps": [
-         {
-          "id": "shopping",
-          "name": "購物助手",
-          "description": "優惠計算、目標金額、多清單管理、語音輸入",
-          "path": "tools/shopping.html",
-          "icon": "shopping-bag",
-          "color": "blue",
-          "status": "active",
-          "featured": true,
-          "tags": ["購物", "優惠", "localStorage"]
-        },
+        {
+           "id": "shopping",
+           "name": "購物助手",
+           "description": "優惠計算、目標金額、多清單管理、語音輸入",
+           "path": "tools/shopping.html",
+           "icon": "shopping-bag",
+           "color": "blue",
+           "status": "active",
+           "featured": true,
+           "tags": ["購物", "優惠", "localStorage"]
+         },
+        {
+           "id": "shopping-list-online",
+           "name": "Smart Shopping List",
+           "description": "智能購物清單、購物模式、雙語界面、項目管理",
+           "path": "https://codeguy0425.github.io/shoppinglist/",
+           "icon": "check-circle",
+           "color": "purple",
+           "status": "active",
+           "featured": false,
+           "tags": ["購物", "清單", "購物模式", "外部連結"]
+         },
         {
           "id": "hotpot",
           "name": "咕嚕咕嚕 - 火鍋計時大師",
