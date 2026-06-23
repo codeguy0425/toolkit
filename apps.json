@@ -151,7 +151,7 @@
           "icon": "clock",
           "color": "blue",
           "status": "active",
-          "featured": false,
+          "featured": true,
           "tags": ["泊車", "停車場", "費用計算", "記錄", "生活"]
         }
       ]
