@@ -35,7 +35,7 @@
         
         body {
             font-family: 'DM Sans', 'Noto Sans TC', sans-serif;
-            background-color: #f9fafb;
+            background-color: #ffffff;
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
             -webkit-touch-callout: none;
@@ -167,7 +167,7 @@
             const colors = colorMap[app.color] || colorMap["blue"];
             const clickable = isAppClickable(app.status);
             const statusBadge = getStatusBadge(app.status);
-            const featuredBadge = app.featured ? `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200 mr-1">⭐ 精選</span>` : "";
+            const featuredBadge = app.featured ? `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-red-50 text-red-400 border border-red-200 mr-1">⭐ 精選</span>` : "";
             
             return `
                 <div class="app-card bg-white p-4 rounded-2xl border ${colors.border} shadow-tf-subtle ${clickable ? `${colors.hoverBg} cursor-pointer` : 'app-disabled'}" 
@@ -187,7 +187,7 @@
                             <p class="text-xs text-slate-500 leading-relaxed">${app.description}</p>
                             ${app.tags && app.tags.length > 0 ? `
                                 <div class="flex flex-wrap gap-1 mt-2">
-                                    ${app.tags.map(tag => `<span class="text-[10px] bg-slate-50 text-slate-500 px-2 py-0.5 rounded-lg font-medium">${tag}</span>`).join('')}
+                                    ${app.tags.map(tag => `<span class="text-[10px] bg-white text-slate-500 px-2 py-0.5 rounded-lg border border-slate-200 font-medium">${tag}</span>`).join('')}
                                 </div>
                             ` : ''}
                         </div>
@@ -206,7 +206,7 @@
             return `
                 <section>
                     <div class="flex items-center gap-2 mb-3">
-                        <div class="p-2 rounded-xl bg-slate-50 text-slate-600">
+                        <div class="p-2 rounded-xl bg-gray-50 text-slate-600">
                             ${icons[category.icon] || icons["grid"]}
                         </div>
                         <h2 class="font-bold text-slate-700 text-base md:text-lg">${category.name}</h2>
@@ -238,7 +238,7 @@
                     
                     if (featuredApps.length > 0) {
                         html += `
-                            <section class="bg-gradient-to-br from-blue-50 to-sky-50 p-4 rounded-2xl border border-blue-100">
+                            <section class="bg-gradient-to-br from-red-50 to-amber-50 p-4 rounded-2xl border border-red-200">
                                 <h2 class="font-bold text-slate-700 text-sm mb-3 uppercase tracking-wider opacity-70">⭐ 精選工具</h2>
                                 <div class="space-y-3">
                                     ${featuredApps.map(app => renderAppCard(app)).join('')}
