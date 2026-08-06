@@ -2,7 +2,7 @@
   "meta": {
     "title": "Codeguy's Toolkit",
     "subtitle": "個人小工具入口",
-    "lastUpdated": "2026-05-27"
+    "lastUpdated": "2026-08-06"
   },
   "categories": [
     {
@@ -153,6 +153,17 @@
           "status": "active",
           "featured": true,
           "tags": ["泊車", "停車場", "費用計算", "記錄", "生活"]
+        },
+        {
+          "id": "daily-meal-tracker",
+          "name": "NutriTrack 飲食紀錄",
+          "description": "每日飲食與外出用餐紀錄：月曆檢視、卡路里統計、健康評分（健康/一般/放縱）、家用vs外出分類、餐廳與外賣月結、每日飲水追蹤、卡路里趨勢圖表（Chart.js）、JSON匯入匯出備份、示範數據",
+          "path": "tools/daily_meal_tracker.html",
+          "icon": "check-circle",
+          "color": "emerald",
+          "status": "active",
+          "featured": true,
+          "tags": ["飲食", "卡路里", "健康", "用餐紀錄", "餐廳", "飲水", "追蹤", "localStorage", "Chart.js"]
         }
       ]
     },

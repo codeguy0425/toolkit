@@ -1,0 +1,1203 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NutriTrack - Daily Meal & Dining Logger</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        emerald: {
+                            50: '#ecfdf5',
+                            100: '#d1fae5',
+                            500: '#10b981',
+                            600: '#059669',
+                            700: '#047857',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js for Monthly Analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="h-full flex flex-col text-slate-800 antialiased selection:bg-emerald-500 selection:text-white">
+
+    <!-- Top Navigation -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo & Branding -->
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center text-white shadow-md shadow-emerald-200">
+                        <i class="fa-solid fa-utensils text-lg"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-lg leading-none text-slate-900">NutriTrack</h1>
+                        <p class="text-xs text-slate-500 font-medium">Meal Calendar & Dining Log</p>
+                    </div>
+                </div>
+
+                <!-- Navigation Tabs -->
+                <nav class="flex space-x-1 sm:space-x-2 bg-slate-100 p-1 rounded-xl">
+                    <button id="tab-calendar-btn" onclick="switchTab('calendar')" class="nav-tab active flex items-center space-x-2 px-3 sm:px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-200 bg-white text-emerald-700 shadow-sm">
+                        <i class="fa-regular fa-calendar-days text-base"></i>
+                        <span class="hidden sm:inline">Calendar View</span>
+                    </button>
+                    <button id="tab-summary-btn" onclick="switchTab('summary')" class="nav-tab flex items-center space-x-2 px-3 sm:px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-200 text-slate-600 hover:text-slate-900">
+                        <i class="fa-solid fa-chart-pie text-base"></i>
+                        <span class="hidden sm:inline">Monthly Summary</span>
+                    </button>
+                </nav>
+
+                <!-- Action Controls -->
+                <div class="flex items-center space-x-2">
+                    <button onclick="openMealModal()" class="flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 sm:px-4 py-2 rounded-xl font-medium text-sm transition-colors shadow-sm shadow-emerald-200 active:scale-95">
+                        <i class="fa-solid fa-plus text-xs"></i>
+                        <span class="hidden sm:inline">Log Meal</span>
+                    </button>
+                    <button onclick="toggleSettingsMenu()" class="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-colors">
+                        <i class="fa-solid fa-ellipsis-vertical text-lg"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Dropdown / Quick Menu -->
+    <div id="settings-dropdown" class="hidden absolute right-4 top-16 z-50 w-64 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 text-sm animate-in fade-in slide-in-from-top-2 duration-150">
+        <div class="px-4 py-2 border-b border-slate-100">
+            <p class="font-semibold text-slate-800">Data & Storage</p>
+            <p class="text-xs text-slate-400">Stored locally in your browser</p>
+        </div>
+        <button onclick="loadSampleData()" class="w-full text-left px-4 py-2.5 hover:bg-slate-50 text-slate-700 flex items-center space-x-2.5">
+            <i class="fa-solid fa-wand-magic-sparkles text-emerald-600 w-4"></i>
+            <span>Load Demo Data</span>
+        </button>
+        <button onclick="exportData()" class="w-full text-left px-4 py-2.5 hover:bg-slate-50 text-slate-700 flex items-center space-x-2.5">
+            <i class="fa-solid fa-file-export text-slate-500 w-4"></i>
+            <span>Export Meal Backup (JSON)</span>
+        </button>
+        <label class="w-full text-left px-4 py-2.5 hover:bg-slate-50 text-slate-700 flex items-center space-x-2.5 cursor-pointer">
+            <i class="fa-solid fa-file-import text-slate-500 w-4"></i>
+            <span>Import Backup Data</span>
+            <input type="file" id="import-file" onchange="importData(event)" accept=".json" class="hidden">
+        </label>
+        <div class="border-t border-slate-100 my-1"></div>
+        <button onclick="clearAllData()" class="w-full text-left px-4 py-2.5 hover:bg-rose-50 text-rose-600 flex items-center space-x-2.5">
+            <i class="fa-solid fa-trash-can w-4"></i>
+            <span>Reset All Meal Data</span>
+        </button>
+    </div>
+
+    <!-- MAIN APP CONTAINER -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col">
+
+        <!-- VIEW 1: CALENDAR VIEW -->
+        <section id="calendar-view" class="space-y-6 flex-1 flex flex-col">
+            
+            <!-- Calendar Navigation Header -->
+            <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div class="flex items-center space-x-3">
+                    <button onclick="changeMonth(-1)" class="p-2.5 rounded-xl hover:bg-slate-100 text-slate-600 transition-colors">
+                        <i class="fa-solid fa-chevron-left"></i>
+                    </button>
+                    <h2 id="calendar-month-year" class="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight min-w-[200px] text-center sm:text-left">
+                        January 2026
+                    </h2>
+                    <button onclick="changeMonth(1)" class="p-2.5 rounded-xl hover:bg-slate-100 text-slate-600 transition-colors">
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </button>
+                    <button onclick="goToToday()" class="px-3 py-1.5 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors">
+                        Today
+                    </button>
+                </div>
+
+                <!-- Quick Legend / Stats Pill -->
+                <div class="flex items-center space-x-4 text-xs font-medium text-slate-500 bg-slate-50 px-3 py-2 rounded-xl border border-slate-100">
+                    <span class="flex items-center"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block mr-1.5"></span> Healthy Meal</span>
+                    <span class="flex items-center"><span class="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block mr-1.5"></span> Dining Out</span>
+                    <span class="flex items-center"><span class="w-2.5 h-2.5 rounded-full bg-indigo-500 inline-block mr-1.5"></span> Home Meal</span>
+                </div>
+            </div>
+
+            <!-- Calendar Container & Selected Day Split View -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1">
+                
+                <!-- Main Calendar Grid (8 cols on LG) -->
+                <div class="lg:col-span-8 bg-white p-4 sm:p-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col">
+                    <!-- Day Header -->
+                    <div class="grid grid-cols-7 mb-2 text-center text-xs font-bold text-slate-400 uppercase tracking-wider">
+                        <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+                    </div>
+                    <!-- Calendar Days Grid -->
+                    <div id="calendar-grid" class="grid grid-cols-7 gap-1 sm:gap-2 flex-1 auto-rows-fr">
+                        <!-- Javascript will dynamically inject calendar day tiles here -->
+                    </div>
+                </div>
+
+                <!-- Selected Day Meals Panel (4 cols on LG) -->
+                <div class="lg:col-span-4 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between space-y-4">
+                    <div>
+                        <div class="flex justify-between items-center pb-3 border-b border-slate-100 mb-4">
+                            <div>
+                                <h3 id="selected-date-title" class="font-bold text-slate-800 text-lg">Today's Meals</h3>
+                                <p id="selected-date-subtitle" class="text-xs text-slate-500">Select a date from the calendar</p>
+                            </div>
+                            <button onclick="openMealModal(selectedDateStr)" class="text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-semibold px-3 py-1.5 rounded-lg transition-colors flex items-center space-x-1">
+                                <i class="fa-solid fa-plus text-[10px]"></i>
+                                <span>Add Meal</span>
+                            </button>
+                        </div>
+
+                        <!-- Daily Nutritional Metrics Summary -->
+                        <div id="daily-summary-pills" class="grid grid-cols-3 gap-2 mb-4">
+                            <div class="bg-slate-50 p-2.5 rounded-xl text-center border border-slate-100">
+                                <p class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Calories</p>
+                                <p id="daily-total-cals" class="text-base font-bold text-slate-800">0</p>
+                            </div>
+                            <div class="bg-slate-50 p-2.5 rounded-xl text-center border border-slate-100">
+                                <p class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Meals</p>
+                                <p id="daily-meal-count" class="text-base font-bold text-slate-800">0</p>
+                            </div>
+                            <div class="bg-slate-50 p-2.5 rounded-xl text-center border border-slate-100">
+                                <p class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Dining Out</p>
+                                <p id="daily-restaurant-count" class="text-base font-bold text-emerald-600">0</p>
+                            </div>
+                        </div>
+
+                        <!-- List of Meals for Selected Date -->
+                        <div id="selected-day-meals" class="space-y-3 max-h-[420px] overflow-y-auto custom-scrollbar pr-1">
+                            <!-- Injected dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Water & Quick Habit Check -->
+                    <div class="bg-emerald-50/60 p-3.5 rounded-xl border border-emerald-100/80 flex items-center justify-between">
+                        <div class="flex items-center space-x-2.5">
+                            <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold">
+                                <i class="fa-solid fa-glass-water"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs font-bold text-slate-800">Daily Water Tracker</p>
+                                <p id="water-intake-text" class="text-[11px] text-slate-500">0 / 8 glasses logged</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-1">
+                            <button onclick="updateWater(-1)" class="w-7 h-7 rounded-lg bg-white border border-slate-200 text-slate-600 flex items-center justify-center font-bold hover:bg-slate-100">-</button>
+                            <button onclick="updateWater(1)" class="w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center font-bold hover:bg-emerald-700 shadow-sm">+</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- VIEW 2: MONTHLY SUMMARY & RESTAURANT LOG -->
+        <section id="summary-view" class="hidden space-y-6 flex-1 flex flex-col">
+            
+            <!-- Summary Header & Month Picker -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row justify-between items-md-center gap-4">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-800 tracking-tight">Monthly Health & Restaurant Report</h2>
+                    <p class="text-xs text-slate-500">Analysis of meals, dining choices, and dietary patterns</p>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <label for="summary-month-select" class="text-xs font-semibold text-slate-500">Select Month:</label>
+                    <input type="month" id="summary-month-select" onchange="renderMonthlySummary()" class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+            </div>
+
+            <!-- Overview Stat Cards -->
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Meals</span>
+                        <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center text-sm">
+                            <i class="fa-solid fa-bowl-food"></i>
+                        </div>
+                    </div>
+                    <p id="stat-total-meals" class="text-2xl font-extrabold text-slate-800 mt-2">0</p>
+                    <p class="text-xs text-slate-400 mt-1" id="stat-avg-meals-per-day">0 meals / day</p>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Restaurant Visits</span>
+                        <div class="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center text-sm">
+                            <i class="fa-solid fa-store"></i>
+                        </div>
+                    </div>
+                    <p id="stat-total-restaurant" class="text-2xl font-extrabold text-slate-800 mt-2">0</p>
+                    <p class="text-xs text-amber-600 font-medium mt-1" id="stat-restaurant-pct">0% of total meals</p>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Home Cooked</span>
+                        <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-sm">
+                            <i class="fa-solid fa-house-chimney-crack"></i>
+                        </div>
+                    </div>
+                    <p id="stat-total-home" class="text-2xl font-extrabold text-slate-800 mt-2">0</p>
+                    <p class="text-xs text-emerald-600 font-medium mt-1" id="stat-home-pct">0% home meals</p>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Avg Daily Cals</span>
+                        <div class="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center text-sm">
+                            <i class="fa-solid fa-fire-flame-curved"></i>
+                        </div>
+                    </div>
+                    <p id="stat-avg-calories" class="text-2xl font-extrabold text-slate-800 mt-2">0 kcal</p>
+                    <p class="text-xs text-slate-400 mt-1">Based on logged days</p>
+                </div>
+            </div>
+
+            <!-- Charts & Breakdown Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                <!-- Chart 1: Dining Out vs Home Cooking Ratio & Health Breakdown -->
+                <div class="lg:col-span-5 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
+                    <div>
+                        <h3 class="font-bold text-slate-800 text-base mb-1">Diet Composition</h3>
+                        <p class="text-xs text-slate-500 mb-4">Dining origin & diet rating distribution</p>
+                        <div class="relative h-56 flex items-center justify-center">
+                            <canvas id="chart-diet-ratio"></canvas>
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-slate-100 grid grid-cols-2 gap-2 text-center text-xs">
+                        <div id="healthy-ratio-pill" class="bg-emerald-50 text-emerald-700 font-semibold p-2 rounded-xl">
+                            Healthy Meals: 0%
+                        </div>
+                        <div id="treat-ratio-pill" class="bg-amber-50 text-amber-700 font-semibold p-2 rounded-xl">
+                            Treat/Indulgent: 0%
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chart 2: Calorie Trend Across Month -->
+                <div class="lg:col-span-7 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
+                    <div>
+                        <h3 class="font-bold text-slate-800 text-base mb-1">Daily Calorie Intake Trend</h3>
+                        <p class="text-xs text-slate-500 mb-4">Caloric tracking for each day of the month</p>
+                        <div class="relative h-56">
+                            <canvas id="chart-calorie-trend"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Restaurant Frequency & Meal Summary Table -->
+            <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+                <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-3 pb-3 border-b border-slate-100">
+                    <div>
+                        <h3 class="font-bold text-slate-800 text-base">Monthly Restaurant & Takeout Log</h3>
+                        <p class="text-xs text-slate-500">Detailed list of dining establishments visited this month</p>
+                    </div>
+                    <!-- Search Filter for Restaurants -->
+                    <div class="relative">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-xs text-slate-400"></i>
+                        <input type="text" id="restaurant-search" oninput="filterRestaurantList()" placeholder="Filter restaurant or meal..." class="pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 w-full sm:w-64">
+                    </div>
+                </div>
+
+                <!-- Restaurant Breakdown Cards Grid -->
+                <div id="restaurant-summary-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Javascript populates restaurant aggregated cards here -->
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <!-- MODAL: ADD / EDIT MEAL -->
+    <div id="meal-modal" class="hidden fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <!-- Modal Header -->
+            <div class="bg-gradient-to-r from-emerald-600 to-teal-600 px-6 py-4 text-white flex justify-between items-center">
+                <div class="flex items-center space-x-2.5">
+                    <i class="fa-solid fa-utensils text-lg"></i>
+                    <h3 id="modal-title" class="font-bold text-lg">Log New Meal</h3>
+                </div>
+                <button onclick="closeMealModal()" class="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition-colors">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Modal Form -->
+            <form id="meal-form" onsubmit="handleMealFormSubmit(event)" class="p-6 space-y-4">
+                <input type="hidden" id="meal-id">
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <!-- Date Input -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">Date</label>
+                        <input type="date" id="meal-date" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium">
+                    </div>
+                    <!-- Meal Category -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">Meal Type</label>
+                        <select id="meal-type" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium">
+                            <option value="Breakfast">🍳 Breakfast</option>
+                            <option value="Lunch">🥗 Lunch</option>
+                            <option value="Dinner">🍽️ Dinner</option>
+                            <option value="Snack">🍎 Snack / Drink</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Meal Name -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">Dish / Meal Description</label>
+                    <input type="text" id="meal-name" required placeholder="e.g. Grilled Chicken Caesar Salad" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+
+                <!-- Dining Source (Home vs Restaurant) -->
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="text-xs font-semibold text-slate-600 uppercase tracking-wider">Dining Location</label>
+                        <span class="text-xs text-slate-400">Where was this meal taken?</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3 mb-2">
+                        <button type="button" id="source-home-btn" onclick="setDiningSource('Home')" class="py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center space-x-2 transition-all border-emerald-500 bg-emerald-50 text-emerald-700">
+                            <i class="fa-solid fa-house"></i>
+                            <span>Home Cooked</span>
+                        </button>
+                        <button type="button" id="source-restaurant-btn" onclick="setDiningSource('Restaurant')" class="py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center space-x-2 transition-all border-slate-200 bg-slate-50 text-slate-600">
+                            <i class="fa-solid fa-utensils"></i>
+                            <span>Restaurant / Dining Out</span>
+                        </button>
+                    </div>
+                    <input type="hidden" id="meal-source" value="Home">
+
+                    <!-- Restaurant Name Field (Shown if Restaurant is selected) -->
+                    <div id="restaurant-input-container" class="hidden mt-2">
+                        <input type="text" id="meal-restaurant" placeholder="Restaurant Name (e.g., Sweetgreen, Chipotle)" class="w-full px-3 py-2 bg-amber-50/50 border border-amber-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <!-- Estimated Calories -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">Calories (kcal)</label>
+                        <input type="number" id="meal-calories" min="0" placeholder="e.g. 550" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                    <!-- Health Rating Tag -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">Health Score</label>
+                        <select id="meal-health-rating" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium">
+                            <option value="Healthy">🟢 Healthy / Balanced</option>
+                            <option value="Moderate">🟡 Moderate / Normal</option>
+                            <option value="Treat">🔴 Treat / Indulgent</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Notes / Macros -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">Notes / Tags (Optional)</label>
+                    <textarea id="meal-notes" rows="2" placeholder="High protein, low carb, shared with family..." class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"></textarea>
+                </div>
+
+                <!-- Form Action Buttons -->
+                <div class="flex justify-end space-x-3 pt-2">
+                    <button type="button" onclick="closeMealModal()" class="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold shadow-md shadow-emerald-200 transition-colors">
+                        Save Meal Log
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 bg-slate-900 text-white px-4 py-3 rounded-2xl shadow-xl flex items-center space-x-3 text-sm transition-all duration-300 transform translate-y-20 opacity-0 pointer-events-none">
+        <i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400"></i>
+        <span id="toast-message">Action completed successfully</span>
+    </div>
+
+    <script>
+        // --- DATA STORE MANAGEMENT ---
+        const STORAGE_KEY = 'nutritrack_meals_db';
+        const WATER_KEY = 'nutritrack_water_db';
+        
+        let mealsData = [];
+        let waterData = {}; // Format: { "YYYY-MM-DD": 4 }
+        let currentDate = new Date();
+        let selectedDateStr = formatDateKey(new Date());
+
+        // Chart instances
+        let dietRatioChart = null;
+        let calorieTrendChart = null;
+
+        // Initialize App on Load
+        window.onload = function() {
+            loadDataFromStorage();
+            
+            // Set input defaults
+            document.getElementById('meal-date').value = selectedDateStr;
+            document.getElementById('summary-month-select').value = formatMonthKey(new Date());
+
+            // Initial Render
+            renderCalendar();
+            renderSelectedDayMeals(selectedDateStr);
+            renderMonthlySummary();
+
+            // Event Listener to close dropdown on click outside
+            document.addEventListener('click', function(e) {
+                const dropdown = document.getElementById('settings-dropdown');
+                if (!e.target.closest('#settings-dropdown') && !e.target.closest('button[onclick*="toggleSettingsMenu"]')) {
+                    dropdown.classList.add('hidden');
+                }
+            });
+        };
+
+        // Date Utilities
+        function formatDateKey(dateObj) {
+            const y = dateObj.getFullYear();
+            const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const d = String(dateObj.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+
+        function formatMonthKey(dateObj) {
+            const y = dateObj.getFullYear();
+            const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+            return `${y}-${m}`;
+        }
+
+        // Local Storage Helpers
+        function loadDataFromStorage() {
+            try {
+                const stored = localStorage.getItem(STORAGE_KEY);
+                mealsData = stored ? JSON.parse(stored) : [];
+                
+                const storedWater = localStorage.getItem(WATER_KEY);
+                waterData = storedWater ? JSON.parse(storedWater) : {};
+
+                if (mealsData.length === 0) {
+                    // Populate initial dummy data if empty
+                    seedSampleData(false);
+                }
+            } catch (e) {
+                console.error("Error reading localStorage:", e);
+                mealsData = [];
+                waterData = {};
+            }
+        }
+
+        function saveDataToStorage() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(mealsData));
+                localStorage.setItem(WATER_KEY, JSON.stringify(waterData));
+            } catch (e) {
+                showToast("Failed to save data locally.", "error");
+            }
+        }
+
+        // --- NAVIGATION & TABS ---
+        function switchTab(tabName) {
+            const calendarBtn = document.getElementById('tab-calendar-btn');
+            const summaryBtn = document.getElementById('tab-summary-btn');
+            const calendarView = document.getElementById('calendar-view');
+            const summaryView = document.getElementById('summary-view');
+
+            if (tabName === 'calendar') {
+                calendarView.classList.remove('hidden');
+                summaryView.classList.add('hidden');
+                
+                calendarBtn.className = "nav-tab active flex items-center space-x-2 px-3 sm:px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-200 bg-white text-emerald-700 shadow-sm";
+                summaryBtn.className = "nav-tab flex items-center space-x-2 px-3 sm:px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-200 text-slate-600 hover:text-slate-900";
+                
+                renderCalendar();
+            } else {
+                calendarView.classList.add('hidden');
+                summaryView.classList.remove('hidden');
+                
+                summaryBtn.className = "nav-tab active flex items-center space-x-2 px-3 sm:px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-200 bg-white text-emerald-700 shadow-sm";
+                calendarBtn.className = "nav-tab flex items-center space-x-2 px-3 sm:px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-200 text-slate-600 hover:text-slate-900";
+
+                renderMonthlySummary();
+            }
+        }
+
+        function toggleSettingsMenu() {
+            const dropdown = document.getElementById('settings-dropdown');
+            dropdown.classList.toggle('hidden');
+        }
+
+        // --- CALENDAR RENDER LOGIC ---
+        function changeMonth(delta) {
+            currentDate.setMonth(currentDate.getMonth() + delta);
+            renderCalendar();
+        }
+
+        function goToToday() {
+            currentDate = new Date();
+            selectedDateStr = formatDateKey(new Date());
+            renderCalendar();
+            renderSelectedDayMeals(selectedDateStr);
+        }
+
+        function renderCalendar() {
+            const grid = document.getElementById('calendar-grid');
+            grid.innerHTML = '';
+
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+
+            // Set Month Title
+            const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            document.getElementById('calendar-month-year').textContent = `${monthNames[month]} ${year}`;
+
+            const firstDayIndex = new Date(year, month, 1).getDay();
+            const totalDays = new Date(year, month + 1, 0).getDate();
+            const prevMonthDays = new Date(year, month, 0).getDate();
+
+            const todayStr = formatDateKey(new Date());
+
+            // 1. Previous Month Filler Days
+            for (let i = firstDayIndex - 1; i >= 0; i--) {
+                const dayNum = prevMonthDays - i;
+                const cell = document.createElement('div');
+                cell.className = "p-1.5 min-h-[70px] sm:min-h-[85px] border border-slate-100 rounded-xl bg-slate-50/50 text-slate-300 text-xs font-semibold select-none";
+                cell.innerHTML = `<span>${dayNum}</span>`;
+                grid.appendChild(cell);
+            }
+
+            // 2. Current Month Days
+            for (let day = 1; day <= totalDays; day++) {
+                const mStr = String(month + 1).padStart(2, '0');
+                const dStr = String(day).padStart(2, '0');
+                const dateKey = `${year}-${mStr}-${dStr}`;
+
+                // Filter meals for this day
+                const dayMeals = mealsData.filter(m => m.date === dateKey);
+                const hasMeals = dayMeals.length > 0;
+                const totalCals = dayMeals.reduce((sum, m) => sum + (parseInt(m.calories) || 0), 0);
+                const isSelected = dateKey === selectedDateStr;
+                const isToday = dateKey === todayStr;
+
+                const cell = document.createElement('div');
+                let cellClasses = "p-1.5 sm:p-2 min-h-[70px] sm:min-h-[85px] border rounded-xl transition-all duration-150 cursor-pointer flex flex-col justify-between relative group ";
+
+                if (isSelected) {
+                    cellClasses += "border-emerald-500 bg-emerald-50/40 shadow-sm ring-2 ring-emerald-500/20 ";
+                } else if (isToday) {
+                    cellClasses += "border-slate-300 bg-slate-50 font-bold ";
+                } else {
+                    cellClasses += "border-slate-100 bg-white hover:border-slate-300 hover:bg-slate-50/80 ";
+                }
+
+                cell.className = cellClasses;
+                cell.onclick = () => selectCalendarDate(dateKey);
+
+                // Date Number Header
+                let headerHTML = `<div class="flex justify-between items-center">
+                    <span class="text-xs sm:text-sm ${isToday ? 'w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold' : (isSelected ? 'font-bold text-emerald-800' : 'text-slate-700')}">${day}</span>
+                    ${totalCals > 0 ? `<span class="text-[10px] font-semibold text-slate-400 hidden sm:inline">${totalCals}k</span>` : ''}
+                </div>`;
+
+                // Meal Dots / Chips
+                let badgesHTML = '<div class="space-y-1 mt-1">';
+                if (hasMeals) {
+                    // Show dots or mini meal tags
+                    const restaurantCount = dayMeals.filter(m => m.source === 'Restaurant').length;
+                    const homeCount = dayMeals.filter(m => m.source === 'Home').length;
+
+                    badgesHTML += `<div class="flex flex-wrap gap-1 items-center">`;
+                    if (restaurantCount > 0) {
+                        badgesHTML += `<span class="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-amber-500 inline-block" title="${restaurantCount} Restaurant meal(s)"></span>`;
+                    }
+                    if (homeCount > 0) {
+                        badgesHTML += `<span class="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-emerald-500 inline-block" title="${homeCount} Home meal(s)"></span>`;
+                    }
+                    badgesHTML += `</div>`;
+
+                    // Preview Dish name on desktop
+                    const firstMeal = dayMeals[0];
+                    badgesHTML += `<p class="text-[10px] text-slate-500 truncate hidden sm:block font-medium line-clamp-1">${firstMeal.name}</p>`;
+                    if (dayMeals.length > 1) {
+                        badgesHTML += `<p class="text-[9px] text-slate-400 font-semibold hidden sm:block">+${dayMeals.length - 1} more</p>`;
+                    }
+                }
+                badgesHTML += '</div>';
+
+                cell.innerHTML = headerHTML + badgesHTML;
+                grid.appendChild(cell);
+            }
+
+            // 3. Next Month Filler Days
+            const remainingCells = (7 - ((firstDayIndex + totalDays) % 7)) % 7;
+            for (let i = 1; i <= remainingCells; i++) {
+                const cell = document.createElement('div');
+                cell.className = "p-1.5 min-h-[70px] sm:min-h-[85px] border border-slate-100 rounded-xl bg-slate-50/50 text-slate-300 text-xs font-semibold select-none";
+                cell.innerHTML = `<span>${i}</span>`;
+                grid.appendChild(cell);
+            }
+        }
+
+        function selectCalendarDate(dateKey) {
+            selectedDateStr = dateKey;
+            renderCalendar();
+            renderSelectedDayMeals(dateKey);
+        }
+
+        // --- SELECTED DAY MEAL SIDE PANEL ---
+        function renderSelectedDayMeals(dateKey) {
+            const dateObj = new Date(dateKey + 'T00:00:00');
+            const options = { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' };
+            document.getElementById('selected-date-title').textContent = dateObj.toLocaleDateString(undefined, options);
+            document.getElementById('selected-date-subtitle').textContent = `Meals logged for this day`;
+
+            const dayMeals = mealsData.filter(m => m.date === dateKey);
+            const container = document.getElementById('selected-day-meals');
+            container.innerHTML = '';
+
+            // Calculate Metrics
+            let totalCals = 0;
+            let restaurantCount = 0;
+
+            if (dayMeals.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-10 px-4 bg-slate-50/60 rounded-2xl border border-dashed border-slate-200">
+                        <i class="fa-solid fa-utensils text-slate-300 text-3xl mb-2"></i>
+                        <p class="text-xs font-semibold text-slate-600">No meals logged for this date</p>
+                        <p class="text-[11px] text-slate-400 mt-0.5">Click "Add Meal" above to record your breakfast, lunch or dinner.</p>
+                    </div>
+                `;
+            } else {
+                dayMeals.forEach(meal => {
+                    totalCals += parseInt(meal.calories) || 0;
+                    if (meal.source === 'Restaurant') restaurantCount++;
+
+                    const mealCard = document.createElement('div');
+                    mealCard.className = "p-3.5 rounded-2xl border border-slate-100 bg-slate-50/50 hover:bg-slate-50 transition-colors flex justify-between items-start space-x-3 group";
+
+                    // Badge icon by meal type
+                    let iconClass = "fa-utensils";
+                    if (meal.type === 'Breakfast') iconClass = "fa-egg";
+                    else if (meal.type === 'Lunch') iconClass = "fa-bowl-rice";
+                    else if (meal.type === 'Dinner') iconClass = "fa-burger";
+                    else if (meal.type === 'Snack') iconClass = "fa-apple-whole";
+
+                    // Health rating color badge
+                    let healthBadge = "bg-emerald-100 text-emerald-800";
+                    if (meal.healthRating === 'Moderate') healthBadge = "bg-amber-100 text-amber-800";
+                    if (meal.healthRating === 'Treat') healthBadge = "bg-rose-100 text-rose-800";
+
+                    mealCard.innerHTML = `
+                        <div class="flex items-start space-x-3">
+                            <div class="w-9 h-9 rounded-xl ${meal.source === 'Restaurant' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'} flex items-center justify-center font-bold text-sm shrink-0">
+                                <i class="fa-solid ${iconClass}"></i>
+                            </div>
+                            <div>
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-xs font-bold text-slate-800">${meal.type}</span>
+                                    <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full ${healthBadge}">${meal.healthRating || 'Healthy'}</span>
+                                </div>
+                                <h4 class="font-bold text-slate-800 text-sm mt-0.5">${meal.name}</h4>
+                                
+                                ${meal.source === 'Restaurant' ? `
+                                    <p class="text-xs text-amber-700 font-semibold flex items-center space-x-1 mt-0.5">
+                                        <i class="fa-solid fa-store text-[10px]"></i>
+                                        <span>${meal.restaurant || 'Dining Out'}</span>
+                                    </p>
+                                ` : `
+                                    <p class="text-xs text-slate-400 flex items-center space-x-1 mt-0.5">
+                                        <i class="fa-solid fa-house text-[10px]"></i>
+                                        <span>Home Cooked</span>
+                                    </p>
+                                `}
+
+                                ${meal.notes ? `<p class="text-xs text-slate-500 italic mt-1">${meal.notes}</p>` : ''}
+                            </div>
+                        </div>
+
+                        <div class="flex flex-col items-end justify-between space-y-2">
+                            <span class="text-xs font-bold text-slate-700">${meal.calories || 0} kcal</span>
+                            <div class="opacity-0 group-hover:opacity-100 transition-opacity flex space-x-1">
+                                <button onclick="editMeal('${meal.id}')" class="p-1 text-slate-400 hover:text-emerald-600 transition-colors">
+                                    <i class="fa-solid fa-pen-to-square text-xs"></i>
+                                </button>
+                                <button onclick="deleteMeal('${meal.id}')" class="p-1 text-slate-400 hover:text-rose-600 transition-colors">
+                                    <i class="fa-solid fa-trash-can text-xs"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    container.appendChild(mealCard);
+                });
+            }
+
+            // Update Metrics Bar
+            document.getElementById('daily-total-cals').textContent = totalCals;
+            document.getElementById('daily-meal-count').textContent = dayMeals.length;
+            document.getElementById('daily-restaurant-count').textContent = restaurantCount;
+
+            // Water tracker state
+            const waterGlasses = waterData[dateKey] || 0;
+            document.getElementById('water-intake-text').textContent = `${waterGlasses} / 8 glasses logged`;
+        }
+
+        function updateWater(delta) {
+            const current = waterData[selectedDateStr] || 0;
+            const updated = Math.max(0, Math.min(16, current + delta));
+            waterData[selectedDateStr] = updated;
+            saveDataToStorage();
+            document.getElementById('water-intake-text').textContent = `${updated} / 8 glasses logged`;
+        }
+
+        // --- MEAL MODAL & FORM LOGIC ---
+        function openMealModal(dateStr = null) {
+            document.getElementById('meal-modal').classList.remove('hidden');
+            document.getElementById('meal-form').reset();
+            document.getElementById('meal-id').value = '';
+            document.getElementById('modal-title').textContent = "Log New Meal";
+            
+            // Set date
+            document.getElementById('meal-date').value = dateStr || selectedDateStr;
+            setDiningSource('Home');
+        }
+
+        function closeMealModal() {
+            document.getElementById('meal-modal').classList.add('hidden');
+        }
+
+        function setDiningSource(source) {
+            document.getElementById('meal-source').value = source;
+            const homeBtn = document.getElementById('source-home-btn');
+            const restBtn = document.getElementById('source-restaurant-btn');
+            const restInput = document.getElementById('restaurant-input-container');
+
+            if (source === 'Restaurant') {
+                restBtn.className = "py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center space-x-2 transition-all border-amber-500 bg-amber-50 text-amber-700";
+                homeBtn.className = "py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center space-x-2 transition-all border-slate-200 bg-slate-50 text-slate-600";
+                restInput.classList.remove('hidden');
+            } else {
+                homeBtn.className = "py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center space-x-2 transition-all border-emerald-500 bg-emerald-50 text-emerald-700";
+                restBtn.className = "py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center space-x-2 transition-all border-slate-200 bg-slate-50 text-slate-600";
+                restInput.classList.add('hidden');
+            }
+        }
+
+        function handleMealFormSubmit(e) {
+            e.preventDefault();
+
+            const mealId = document.getElementById('meal-id').value;
+            const mealObj = {
+                id: mealId || 'meal_' + Date.now(),
+                date: document.getElementById('meal-date').value,
+                type: document.getElementById('meal-type').value,
+                name: document.getElementById('meal-name').value.trim(),
+                source: document.getElementById('meal-source').value,
+                restaurant: document.getElementById('meal-source').value === 'Restaurant' ? document.getElementById('meal-restaurant').value.trim() : '',
+                calories: parseInt(document.getElementById('meal-calories').value) || 0,
+                healthRating: document.getElementById('meal-health-rating').value,
+                notes: document.getElementById('meal-notes').value.trim()
+            };
+
+            if (mealId) {
+                // Update existing
+                const index = mealsData.findIndex(m => m.id === mealId);
+                if (index !== -1) mealsData[index] = mealObj;
+                showToast("Meal entry updated");
+            } else {
+                // Add new
+                mealsData.push(mealObj);
+                showToast("Meal logged successfully!");
+            }
+
+            saveDataToStorage();
+            closeMealModal();
+
+            // Refresh UI
+            selectedDateStr = mealObj.date;
+            renderCalendar();
+            renderSelectedDayMeals(selectedDateStr);
+            renderMonthlySummary();
+        }
+
+        function editMeal(id) {
+            const meal = mealsData.find(m => m.id === id);
+            if (!meal) return;
+
+            document.getElementById('meal-id').value = meal.id;
+            document.getElementById('meal-date').value = meal.date;
+            document.getElementById('meal-type').value = meal.type;
+            document.getElementById('meal-name').value = meal.name;
+            document.getElementById('meal-calories').value = meal.calories;
+            document.getElementById('meal-health-rating').value = meal.healthRating || 'Healthy';
+            document.getElementById('meal-notes').value = meal.notes || '';
+            
+            setDiningSource(meal.source);
+            if (meal.source === 'Restaurant') {
+                document.getElementById('meal-restaurant').value = meal.restaurant || '';
+            }
+
+            document.getElementById('modal-title').textContent = "Edit Meal Log";
+            document.getElementById('meal-modal').classList.remove('hidden');
+        }
+
+        function deleteMeal(id) {
+            mealsData = mealsData.filter(m => m.id !== id);
+            saveDataToStorage();
+            showToast("Meal removed");
+            renderCalendar();
+            renderSelectedDayMeals(selectedDateStr);
+            renderMonthlySummary();
+        }
+
+        // --- MONTHLY SUMMARY & RESTAURANT LOG ANALYTICS ---
+        function renderMonthlySummary() {
+            const monthKey = document.getElementById('summary-month-select').value; // YYYY-MM
+            if (!monthKey) return;
+
+            const monthMeals = mealsData.filter(m => m.date.startsWith(monthKey));
+
+            // Stat calculations
+            const totalMeals = monthMeals.length;
+            const restaurantMeals = monthMeals.filter(m => m.source === 'Restaurant');
+            const homeMeals = monthMeals.filter(m => m.source === 'Home');
+            
+            const restaurantCount = restaurantMeals.length;
+            const homeCount = homeMeals.length;
+
+            const restPct = totalMeals > 0 ? Math.round((restaurantCount / totalMeals) * 100) : 0;
+            const homePct = totalMeals > 0 ? Math.round((homeCount / totalMeals) * 100) : 0;
+
+            // Unique days logged
+            const uniqueDays = new Set(monthMeals.map(m => m.date)).size;
+            const avgMealsPerDay = uniqueDays > 0 ? (totalMeals / uniqueDays).toFixed(1) : 0;
+
+            const totalCalories = monthMeals.reduce((sum, m) => sum + (parseInt(m.calories) || 0), 0);
+            const avgCalories = uniqueDays > 0 ? Math.round(totalCalories / uniqueDays) : 0;
+
+            // Health ratings count
+            const healthyCount = monthMeals.filter(m => m.healthRating === 'Healthy').length;
+            const treatCount = monthMeals.filter(m => m.healthRating === 'Treat').length;
+
+            const healthyPct = totalMeals > 0 ? Math.round((healthyCount / totalMeals) * 100) : 0;
+            const treatPct = totalMeals > 0 ? Math.round((treatCount / totalMeals) * 100) : 0;
+
+            // Update Header Stats
+            document.getElementById('stat-total-meals').textContent = totalMeals;
+            document.getElementById('stat-avg-meals-per-day').textContent = `${avgMealsPerDay} meals / day avg`;
+            
+            document.getElementById('stat-total-restaurant').textContent = restaurantCount;
+            document.getElementById('stat-restaurant-pct').textContent = `${restPct}% of total meals`;
+
+            document.getElementById('stat-total-home').textContent = homeCount;
+            document.getElementById('stat-home-pct').textContent = `${homePct}% home cooked`;
+
+            document.getElementById('stat-avg-calories').textContent = `${avgCalories} kcal`;
+
+            document.getElementById('healthy-ratio-pill').textContent = `Healthy Meals: ${healthyPct}%`;
+            document.getElementById('treat-ratio-pill').textContent = `Treat / Indulgence: ${treatPct}%`;
+
+            // Render Charts
+            renderDietRatioChart(homeCount, restaurantCount);
+            renderCalorieTrendChart(monthKey);
+
+            // Render Restaurant Grid Breakdown
+            renderRestaurantGrid(restaurantMeals);
+        }
+
+        function renderDietRatioChart(homeCount, restaurantCount) {
+            const ctx = document.getElementById('chart-diet-ratio').getContext('2d');
+            
+            if (dietRatioChart) dietRatioChart.destroy();
+
+            dietRatioChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Home Cooked', 'Restaurant / Dining Out'],
+                    datasets: [{
+                        data: [homeCount, restaurantCount],
+                        backgroundColor: ['#10b981', '#f59e0b'],
+                        borderWidth: 0,
+                        hoverOffset: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                font: { family: 'Inter', size: 12 },
+                                padding: 15
+                            }
+                        }
+                    },
+                    cutout: '70%'
+                }
+            });
+        }
+
+        function renderCalorieTrendChart(monthKey) {
+            const ctx = document.getElementById('chart-calorie-trend').getContext('2d');
+            if (calorieTrendChart) calorieTrendChart.destroy();
+
+            const [yearStr, monthStr] = monthKey.split('-');
+            const year = parseInt(yearStr);
+            const month = parseInt(monthStr);
+            const daysInMonth = new Date(year, month, 0).getDate();
+
+            const labels = [];
+            const calorieData = [];
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateKey = `${monthKey}-${String(day).padStart(2, '0')}`;
+                labels.push(day);
+
+                const dayMeals = mealsData.filter(m => m.date === dateKey);
+                const dayCals = dayMeals.reduce((sum, m) => sum + (parseInt(m.calories) || 0), 0);
+                calorieData.push(dayCals);
+            }
+
+            calorieTrendChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Calories (kcal)',
+                        data: calorieData,
+                        backgroundColor: '#10b98120',
+                        borderColor: '#059669',
+                        borderWidth: 1.5,
+                        borderRadius: 4,
+                        hoverBackgroundColor: '#059669'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: '#f1f5f9' },
+                            ticks: { font: { family: 'Inter', size: 10 } }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { font: { family: 'Inter', size: 10 } }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+        }
+
+        function renderRestaurantGrid(restaurantMeals) {
+            const container = document.getElementById('restaurant-summary-grid');
+            container.innerHTML = '';
+
+            if (restaurantMeals.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full text-center py-8 text-slate-400 text-xs">
+                        No restaurant meals or dining out recorded for this month.
+                    </div>
+                `;
+                return;
+            }
+
+            // Group by Restaurant Name
+            const restMap = {};
+            restaurantMeals.forEach(m => {
+                const name = m.restaurant || 'Unnamed Restaurant';
+                if (!restMap[name]) {
+                    restMap[name] = {
+                        count: 0,
+                        dishes: [],
+                        totalCals: 0
+                    };
+                }
+                restMap[name].count++;
+                restMap[name].totalCals += (parseInt(m.calories) || 0);
+                restMap[name].dishes.push(m.name);
+            });
+
+            // Sort by highest visits
+            const sortedRestaurants = Object.entries(restMap).sort((a, b) => b[1].count - a[1].count);
+
+            sortedRestaurants.forEach(([name, data]) => {
+                const card = document.createElement('div');
+                card.className = "restaurant-card p-4 rounded-2xl border border-slate-200/80 bg-gradient-to-b from-white to-amber-50/20 shadow-sm space-y-3";
+                
+                const uniqueDishes = [...new Set(data.dishes)];
+
+                card.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h4 class="font-bold text-slate-800 text-sm flex items-center space-x-1.5">
+                                <i class="fa-solid fa-store text-amber-500 text-xs"></i>
+                                <span>${name}</span>
+                            </h4>
+                            <p class="text-xs text-slate-400 mt-0.5">${data.count} visit${data.count > 1 ? 's' : ''} this month</p>
+                        </div>
+                        <span class="px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-bold">
+                            ${data.count}x
+                        </span>
+                    </div>
+
+                    <div class="space-y-1">
+                        <p class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Dishes Taken:</p>
+                        <ul class="text-xs text-slate-600 space-y-1">
+                            ${uniqueDishes.map(d => `<li class="flex items-center space-x-1.5"><i class="fa-solid fa-angle-right text-[10px] text-amber-500"></i><span class="truncate">${d}</span></li>`).join('')}
+                        </ul>
+                    </div>
+
+                    <div class="pt-2 border-t border-slate-100 flex justify-between text-xs text-slate-500">
+                        <span>Avg Cal / Visit:</span>
+                        <span class="font-bold text-slate-700">${Math.round(data.totalCals / data.count)} kcal</span>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function filterRestaurantList() {
+            const query = document.getElementById('restaurant-search').value.toLowerCase();
+            const cards = document.querySelectorAll('.restaurant-card');
+
+            cards.forEach(card => {
+                const text = card.textContent.toLowerCase();
+                if (text.includes(query)) {
+                    card.classList.remove('hidden');
+                } else {
+                    card.classList.add('hidden');
+                }
+            });
+        }
+
+        // --- BACKUP & SAMPLE DATA ---
+        function seedSampleData(overwrite = true) {
+            if (overwrite || mealsData.length === 0) {
+                const today = new Date();
+                const year = today.getFullYear();
+                const month = String(today.getMonth() + 1).padStart(2, '0');
+
+                mealsData = [
+                    { id: 'm1', date: `${year}-${month}-01`, type: 'Breakfast', name: 'Oatmeal with Berries & Honey', source: 'Home', calories: 350, healthRating: 'Healthy', notes: 'High fiber start' },
+                    { id: 'm2', date: `${year}-${month}-01`, type: 'Lunch', name: 'Chicken Avocado Grain Bowl', source: 'Restaurant', restaurant: 'Sweetgreen', calories: 620, healthRating: 'Healthy', notes: 'Clean lunch' },
+                    { id: 'm3', date: `${year}-${month}-01`, type: 'Dinner', name: 'Pan Seared Salmon & Asparagus', source: 'Home', calories: 580, healthRating: 'Healthy', notes: 'Omega 3 rich' },
+                    
+                    { id: 'm4', date: `${year}-${month}-03`, type: 'Lunch', name: 'Double Cheeseburger & Fries', source: 'Restaurant', restaurant: 'Shake Shack', calories: 950, healthRating: 'Treat', notes: 'Weekend treat' },
+                    { id: 'm5', date: `${year}-${month}-03`, type: 'Dinner', name: 'Homemade Greek Salad', source: 'Home', calories: 400, healthRating: 'Healthy', notes: 'Light evening' },
+
+                    { id: 'm6', date: `${year}-${month}-05`, type: 'Breakfast', name: 'Greek Yogurt & Granola', source: 'Home', calories: 280, healthRating: 'Healthy', notes: '' },
+                    { id: 'm7', date: `${year}-${month}-05`, type: 'Lunch', name: 'Chipotle Chicken Burrito Bowl', source: 'Restaurant', restaurant: 'Chipotle', calories: 750, healthRating: 'Moderate', notes: 'Extra pinto beans' },
+
+                    { id: 'm8', date: `${year}-${month}-08`, type: 'Lunch', name: 'Sushi Combo Set', source: 'Restaurant', restaurant: 'Oishii Sushi', calories: 550, healthRating: 'Healthy', notes: 'Fresh salmon & tuna' },
+                    { id: 'm9', date: `${year}-${month}-10`, type: 'Dinner', name: 'Sweetgreen Harvest Bowl', source: 'Restaurant', restaurant: 'Sweetgreen', calories: 600, healthRating: 'Healthy', notes: 'Favorite salad' },
+                ];
+
+                waterData[`${year}-${month}-01`] = 7;
+                waterData[`${year}-${month}-03`] = 5;
+
+                saveDataToStorage();
+                showToast("Demo meal data loaded!");
+                renderCalendar();
+                renderSelectedDayMeals(selectedDateStr);
+                renderMonthlySummary();
+            }
+        }
+
+        function loadSampleData() {
+            seedSampleData(true);
+        }
+
+        function exportData() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ meals: mealsData, water: waterData }));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `nutritrack_backup_${formatDateKey(new Date())}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+            showToast("Backup exported to JSON file");
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    if (parsed.meals) {
+                        mealsData = parsed.meals;
+                        waterData = parsed.water || {};
+                        saveDataToStorage();
+                        showToast("Data imported successfully!");
+                        renderCalendar();
+                        renderSelectedDayMeals(selectedDateStr);
+                        renderMonthlySummary();
+                    } else {
+                        showToast("Invalid JSON file format", "error");
+                    }
+                } catch (err) {
+                    showToast("Error parsing file", "error");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function clearAllData() {
+            mealsData = [];
+            waterData = {};
+            saveDataToStorage();
+            showToast("All data reset");
+            renderCalendar();
+            renderSelectedDayMeals(selectedDateStr);
+            renderMonthlySummary();
+        }
+
+        // --- UI TOAST MESSAGES ---
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-message');
+            const toastIcon = document.getElementById('toast-icon');
+
+            toastMsg.textContent = message;
+            if (type === 'error') {
+                toastIcon.className = "fa-solid fa-circle-exclamation text-rose-400";
+            } else {
+                toastIcon.className = "fa-solid fa-circle-check text-emerald-400";
+            }
+
+            toast.classList.remove('translate-y-20', 'opacity-0', 'pointer-events-none');
+            
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0', 'pointer-events-none');
+            }, 2500);
+        }
+    </script>
+</body>
+</html>
