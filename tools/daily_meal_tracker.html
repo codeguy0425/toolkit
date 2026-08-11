@@ -721,10 +721,6 @@
         // Load from DB
         async function loadDataFromStorage() {
             await dbLoadAll();
-            if (mealsData.length === 0) {
-                // Populate initial dummy data if empty
-                seedSampleData(false);
-            }
         }
 
 
