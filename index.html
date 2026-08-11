@@ -293,11 +293,7 @@
             }
             
             try {
-                if (path.startsWith('http://') || path.startsWith('https://')) {
-                    window.open(path, '_blank');
-                } else {
-                    window.location.href = path;
-                }
+                window.open(path, '_blank');
             } catch (e) {
                 showToast("無法開啟此工具", "❌", "bg-red-500");
             }
