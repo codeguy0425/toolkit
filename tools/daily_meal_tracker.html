@@ -92,7 +92,7 @@
     <div id="settings-dropdown" class="hidden absolute right-4 top-16 z-50 w-64 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 text-sm animate-in fade-in slide-in-from-top-2 duration-150">
         <div class="px-4 py-2 border-b border-slate-100">
             <p class="font-semibold text-slate-800">Data & Storage</p>
-            <p class="text-xs text-slate-400">Stored locally in your browser</p>
+            <p class="text-xs text-slate-400">Synced &amp; backed up to the cloud</p>
         </div>
         <button onclick="loadSampleData()" class="w-full text-left px-4 py-2.5 hover:bg-slate-50 text-slate-700 flex items-center space-x-2.5">
             <i class="fa-solid fa-wand-magic-sparkles text-emerald-600 w-4"></i>
@@ -1396,6 +1396,7 @@
         }
 
         function clearAllData() {
+            if (!confirm("This permanently deletes ALL your meal data from the cloud on every device. Are you sure?")) return;
             mealsData = [];
             waterData = {};
             dbClearAll();
