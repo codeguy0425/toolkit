@@ -802,6 +802,13 @@
     // ---------- SUPABASE AUTH ----------
     window.addEventListener('DOMContentLoaded', () => {
       initAuth();
+
+      // Autosave form draft while typing (survives app switches / tab reloads)
+      FORM_FIELDS.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) { el.addEventListener('input', saveDraft); el.addEventListener('change', saveDraft); }
+      });
+
       // Close settings dropdown when clicking outside
       document.addEventListener('click', function(e) {
         const dropdown = document.getElementById('settings-dropdown');
@@ -1601,6 +1608,16 @@
         const hours = String(today.getHours()).padStart(2, '0');
         const mins = String(today.getMinutes()).padStart(2, '0');
         document.getElementById('inputTime').value = `${hours}:${mins}`;
+        // Restore in-progress draft (if the page was reloaded mid-entry)
+        try {
+          const d = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null');
+          if (d) {
+            FORM_FIELDS.forEach(id => {
+              const el = document.getElementById(id);
+              if (el && d[id] !== undefined && d[id] !== '') el.value = d[id];
+            });
+          }
+        } catch (e) {}
       }
 
       updateLiveCategoryPreview();
@@ -1627,12 +1644,30 @@
       preview.className = `p-3 rounded-xl text-xs font-bold text-center border ${cat.badgeBg} ${cat.textClr} ${cat.borderClr}`;
     }
 
+    // ---------- DRAFT AUTOSAVE (survives app switches / tab reloads) ----------
+    const DRAFT_KEY = 'vitalsflow_draft';
+    const FORM_FIELDS = ['inputDate','inputTime','inputPeriod','inputSystolic','inputDiastolic','inputPulse','inputArm','inputPosition','inputNotes'];
+
+    function saveDraft() {
+      try {
+        const d = {};
+        FORM_FIELDS.forEach(id => { const el = document.getElementById(id); if (el) d[id] = el.value; });
+        const hasContent = ['inputSystolic','inputDiastolic','inputPulse','inputNotes'].some(id => (d[id] || '').toString().trim() !== '');
+        if (hasContent) localStorage.setItem(DRAFT_KEY, JSON.stringify(d));
+        else localStorage.removeItem(DRAFT_KEY);
+      } catch (e) {}
+    }
+
+    function clearDraft() {
+      try { localStorage.removeItem(DRAFT_KEY); } catch (e) {}
+    }
+
     function handleFormSubmit(e) {
       e.preventDefault();
       const editId = document.getElementById('editEntryId').value;
 
       const newEntry = {
-        id: editId || 'log_' + Date.now(),
+        id: editId || newUuid(),
         date: document.getElementById('inputDate').value,
         time: document.getElementById('inputTime').value,
         period: document.getElementById('inputPeriod').value,
@@ -1652,6 +1687,7 @@
       }
 
       dbUpsertVital(newEntry);
+      clearDraft();
       closeFormModal();
       
       document.getElementById('monthSelect').value = newEntry.date.slice(0, 7);
