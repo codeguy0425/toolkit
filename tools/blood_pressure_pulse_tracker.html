@@ -1,0 +1,1450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VitalsFlow - Blood Pressure & Heart Rate Tracker</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Google Fonts: Inter -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            medical: {
+              50: '#f0f9ff',
+              100: '#e0f2fe',
+              500: '#0284c7',
+              600: '#0369a1',
+              700: '#075985',
+              900: '#0c4a6e',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f8fafc;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    @media print {
+      .no-print { display: none !important; }
+      .print-only { display: block !important; }
+      body { background: white; color: black; padding: 0; margin: 0; }
+      .card-shadow { box-shadow: none !important; border: 1px solid #ccc !important; }
+      .page-break { page-break-before: always; }
+    }
+    .print-only { display: none; }
+  </style>
+</head>
+<body class="text-slate-800 antialiased min-h-screen flex flex-col">
+
+  <!-- Top Navigation Header -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm no-print">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between h-16 items-center">
+        <!-- Logo & Title -->
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-rose-500 text-white flex items-center justify-center shadow-md shadow-rose-200">
+            <i class="fa-solid font-bold fa-heart-pulse text-xl"></i>
+          </div>
+          <div>
+            <h1 class="text-xl font-bold text-slate-900 leading-tight">VitalsFlow</h1>
+            <p class="text-xs text-slate-500 font-medium">BP & Heart Rate Tracker</p>
+          </div>
+        </div>
+
+        <!-- View Switcher Tabs -->
+        <nav class="hidden md:flex space-x-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
+          <button id="tab-dashboard" onclick="switchView('dashboard')" class="px-4 py-1.5 text-xs font-bold rounded-lg transition flex items-center space-x-1.5 bg-white text-slate-900 shadow-sm">
+            <i class="fa-solid fa-chart-line text-rose-500"></i>
+            <span>Dashboard</span>
+          </button>
+          <button id="tab-calendar" onclick="switchView('calendar')" class="px-4 py-1.5 text-xs font-semibold rounded-lg transition flex items-center space-x-1.5 text-slate-600 hover:text-slate-900">
+            <i class="fa-solid fa-calendar-days text-sky-500"></i>
+            <span>Calendar View</span>
+          </button>
+          <button id="tab-report" onclick="switchView('report')" class="px-4 py-1.5 text-xs font-semibold rounded-lg transition flex items-center space-x-1.5 text-slate-600 hover:text-slate-900">
+            <i class="fa-solid fa-file-invoice text-emerald-500"></i>
+            <span>Summary Report</span>
+          </button>
+        </nav>
+
+        <!-- Action Buttons -->
+        <div class="flex items-center space-x-2">
+          <button onclick="openFormModal()" class="bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs sm:text-sm px-3.5 py-2 rounded-xl transition flex items-center space-x-1.5 shadow-sm">
+            <i class="fa-solid fa-plus"></i>
+            <span>Log Reading</span>
+          </button>
+
+          <button onclick="exportCSV()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-xs sm:text-sm px-3 py-2 rounded-xl transition flex items-center space-x-1.5" title="Export CSV">
+            <i class="fa-solid fa-file-csv text-emerald-600 text-base"></i>
+            <span class="hidden sm:inline">CSV</span>
+          </button>
+
+          <button onclick="toggleInfoModal()" class="text-slate-400 hover:text-slate-600 p-2 rounded-lg" title="AHA Guidelines Info">
+            <i class="fa-solid fa-circle-info text-lg"></i>
+          </button>
+        </div>
+      </div>
+      
+      <!-- Mobile Sub-navigation -->
+      <div class="flex md:hidden border-t border-slate-100 py-2 justify-around text-xs font-semibold">
+        <button id="mob-tab-dashboard" onclick="switchView('dashboard')" class="text-rose-600 font-bold border-b-2 border-rose-600 pb-1">
+          <i class="fa-solid fa-chart-line mr-1"></i> Dashboard
+        </button>
+        <button id="mob-tab-calendar" onclick="switchView('calendar')" class="text-slate-500 pb-1">
+          <i class="fa-solid fa-calendar-days mr-1"></i> Calendar
+        </button>
+        <button id="mob-tab-report" onclick="switchView('report')" class="text-slate-500 pb-1">
+          <i class="fa-solid fa-file-invoice mr-1"></i> Summary
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+    <!-- Global Month Selection Bar -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm no-print">
+      <div class="flex items-center space-x-3">
+        <label for="monthSelect" class="text-xs font-bold uppercase tracking-wider text-slate-500">Target Month:</label>
+        <div class="relative flex items-center space-x-1">
+          <button onclick="changeMonth(-1)" class="p-2 text-slate-500 hover:text-slate-800 rounded-lg hover:bg-slate-100" title="Previous Month">
+            <i class="fa-solid fa-chevron-left text-xs"></i>
+          </button>
+          <input type="month" id="monthSelect" onchange="onMonthChange()" class="bg-slate-50 border border-slate-300 text-slate-900 text-xs sm:text-sm font-semibold rounded-xl focus:ring-rose-500 focus:border-rose-500 block p-2">
+          <button onclick="changeMonth(1)" class="p-2 text-slate-500 hover:text-slate-800 rounded-lg hover:bg-slate-100" title="Next Month">
+            <i class="fa-solid fa-chevron-right text-xs"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-3 w-full sm:w-auto justify-end">
+        <span class="text-xs text-slate-500 font-medium" id="recordCountLabel">Showing 0 entries</span>
+        <button onclick="resetDemoData()" class="text-xs bg-rose-50 hover:bg-rose-100 text-rose-700 font-medium px-2.5 py-1.5 rounded-lg border border-rose-200 transition">
+          <i class="fa-solid fa-rotate-left mr-1"></i> Reset Demo Data
+        </button>
+      </div>
+    </div>
+
+    <!-- VIEW 1: DASHBOARD VIEW -->
+    <div id="view-dashboard" class="view-section space-y-6">
+      
+      <!-- KPI Overview Cards Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        
+        <!-- Average BP Card -->
+        <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col justify-between">
+          <div class="flex justify-between items-start">
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Monthly Avg BP</p>
+              <div class="flex items-baseline space-x-1 mt-1">
+                <span id="statAvgBP" class="text-3xl font-extrabold text-slate-900">--/--</span>
+                <span class="text-xs font-medium text-slate-500">mmHg</span>
+              </div>
+            </div>
+            <div class="w-10 h-10 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center">
+              <i class="fa-solid fa-gauge-high"></i>
+            </div>
+          </div>
+          <div class="mt-4 pt-3 border-t border-slate-100 flex justify-between items-center text-xs">
+            <span id="statBPStatusBadge" class="px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600">
+              Evaluating...
+            </span>
+            <span class="text-slate-400 font-medium" id="statBPRange">Min/Max: --</span>
+          </div>
+        </div>
+
+        <!-- Average Heart Rate Card -->
+        <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col justify-between">
+          <div class="flex justify-between items-start">
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Avg Heart Rate</p>
+              <div class="flex items-baseline space-x-1 mt-1">
+                <span id="statAvgHR" class="text-3xl font-extrabold text-slate-900">--</span>
+                <span class="text-xs font-medium text-slate-500">BPM</span>
+              </div>
+            </div>
+            <div class="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
+              <i class="fa-solid fa-heart-pulse"></i>
+            </div>
+          </div>
+          <div class="mt-4 pt-3 border-t border-slate-100 flex justify-between items-center text-xs">
+            <span class="text-slate-500 font-medium" id="statHRCategory">Resting Pulse</span>
+            <span class="text-slate-400 font-medium" id="statHRRange">Min/Max: --</span>
+          </div>
+        </div>
+
+        <!-- Pulse Pressure Card -->
+        <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col justify-between">
+          <div class="flex justify-between items-start">
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Pulse Pressure</p>
+              <div class="flex items-baseline space-x-1 mt-1">
+                <span id="statPulsePressure" class="text-3xl font-extrabold text-slate-900">--</span>
+                <span class="text-xs font-medium text-slate-500">mmHg</span>
+              </div>
+            </div>
+            <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+              <i class="fa-solid fa-wave-square"></i>
+            </div>
+          </div>
+          <div class="mt-4 pt-3 border-t border-slate-100 flex justify-between items-center text-xs">
+            <span class="text-slate-500">Systolic - Diastolic</span>
+            <span id="statPPEval" class="font-semibold text-emerald-600">Normal (~40)</span>
+          </div>
+        </div>
+
+        <!-- Diurnal Split Card -->
+        <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col justify-between">
+          <div class="flex justify-between items-start">
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Morning vs Evening</p>
+              <div class="mt-2 space-y-1">
+                <div class="flex justify-between text-xs space-x-3">
+                  <span class="text-slate-500 font-medium"><i class="fa-solid fa-sun text-amber-500 mr-1"></i> Morning:</span>
+                  <span id="statAMAvg" class="font-bold text-slate-800">--/--</span>
+                </div>
+                <div class="flex justify-between text-xs space-x-3">
+                  <span class="text-slate-500 font-medium"><i class="fa-solid fa-moon text-indigo-400 mr-1"></i> Evening:</span>
+                  <span id="statPMAvg" class="font-bold text-slate-800">--/--</span>
+                </div>
+              </div>
+            </div>
+            <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+              <i class="fa-solid fa-cloud-sun"></i>
+            </div>
+          </div>
+          <div class="mt-3 pt-2 border-t border-slate-100 text-[11px] text-slate-400 text-right">
+            Diurnal Comparison
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Charts Section Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Main Line Chart -->
+        <div class="lg:col-span-2 bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+            <div>
+              <h2 class="text-base font-bold text-slate-900">Monthly Blood Pressure & Heart Rate Trend</h2>
+              <p class="text-xs text-slate-500">Daily readings plotted chronologically</p>
+            </div>
+            <div class="flex items-center space-x-3 text-xs font-medium">
+              <span class="inline-flex items-center"><span class="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block mr-1"></span> Systolic</span>
+              <span class="inline-flex items-center"><span class="w-2.5 h-2.5 rounded-full bg-sky-500 inline-block mr-1"></span> Diastolic</span>
+              <span class="inline-flex items-center"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block mr-1"></span> Pulse</span>
+            </div>
+          </div>
+          <div class="relative flex-1 min-h-[280px]">
+            <canvas id="trendChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Donut Chart: AHA Breakdown -->
+        <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col justify-between">
+          <div>
+            <h2 class="text-base font-bold text-slate-900">AHA Category Breakdown</h2>
+            <p class="text-xs text-slate-500 mb-4">Percentage of readings per risk category</p>
+            <div class="relative h-[190px] flex items-center justify-center">
+              <canvas id="categoryChart"></canvas>
+            </div>
+          </div>
+          <div class="mt-4 border-t border-slate-100 pt-3 space-y-2 text-xs" id="categoryLegendList">
+            <!-- Dynamically filled -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Log Entries Table Card -->
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="p-4 sm:p-5 border-b border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h2 class="text-base font-bold text-slate-900">Vitals Log Table</h2>
+            <p class="text-xs text-slate-500">Detailed entries for selected month</p>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <div class="relative">
+              <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+              <input type="text" id="searchInput" oninput="applyFilters()" placeholder="Search notes..." class="pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-300 rounded-xl focus:ring-rose-500 focus:border-rose-500 w-36 sm:w-48">
+            </div>
+
+            <select id="timeFilter" onchange="applyFilters()" class="text-xs bg-slate-50 border border-slate-300 rounded-xl p-1.5 focus:ring-rose-500">
+              <option value="ALL">All Times</option>
+              <option value="Morning">Morning</option>
+              <option value="Afternoon">Afternoon</option>
+              <option value="Evening">Evening</option>
+              <option value="Night">Night</option>
+            </select>
+
+            <select id="categoryFilter" onchange="applyFilters()" class="text-xs bg-slate-50 border border-slate-300 rounded-xl p-1.5 focus:ring-rose-500">
+              <option value="ALL">All Categories</option>
+              <option value="Normal">Normal</option>
+              <option value="Elevated">Elevated</option>
+              <option value="Stage 1">Stage 1</option>
+              <option value="Stage 2">Stage 2</option>
+              <option value="Crisis">Crisis</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto custom-scrollbar">
+          <table class="w-full text-left text-sm text-slate-600">
+            <thead class="bg-slate-50 text-xs uppercase font-semibold text-slate-500 border-b border-slate-200">
+              <tr>
+                <th class="py-3 px-4">Date & Time</th>
+                <th class="py-3 px-4">Blood Pressure</th>
+                <th class="py-3 px-4">Pulse</th>
+                <th class="py-3 px-4">AHA Status</th>
+                <th class="py-3 px-4">Details</th>
+                <th class="py-3 px-4">Notes</th>
+                <th class="py-3 px-4 text-right no-print">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="logTableBody" class="divide-y divide-slate-100">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+
+        <div id="emptyState" class="hidden p-8 text-center">
+          <div class="w-12 h-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
+            <i class="fa-solid fa-notes-medical text-xl"></i>
+          </div>
+          <p class="text-sm font-semibold text-slate-700">No vitals readings found</p>
+          <p class="text-xs text-slate-400 mt-1">Click "Log Reading" above or choose a day in Calendar view.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- VIEW 2: CALENDAR VIEW FOR INPUT & UPDATE -->
+    <div id="view-calendar" class="view-section hidden space-y-4">
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-6">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6 pb-4 border-b border-slate-100">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900 flex items-center">
+              <i class="fa-solid fa-calendar-days text-sky-600 mr-2"></i> Monthly Vitals Calendar
+            </h2>
+            <p class="text-xs text-slate-500">Click on any day cell to add new readings or view & edit existing logs.</p>
+          </div>
+          <div class="flex items-center space-x-3 text-xs font-semibold">
+            <span class="flex items-center"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500 mr-1.5"></span> Normal</span>
+            <span class="flex items-center"><span class="w-2.5 h-2.5 rounded-full bg-amber-500 mr-1.5"></span> Elevated</span>
+            <span class="flex items-center"><span class="w-2.5 h-2.5 rounded-full bg-orange-500 mr-1.5"></span> Stage 1</span>
+            <span class="flex items-center"><span class="w-2.5 h-2.5 rounded-full bg-rose-500 mr-1.5"></span> Stage 2 / Crisis</span>
+          </div>
+        </div>
+
+        <!-- Days of week header -->
+        <div class="grid grid-cols-7 gap-1 sm:gap-2 mb-2 text-center text-xs font-bold text-slate-400 uppercase tracking-wider">
+          <div>Sun</div>
+          <div>Mon</div>
+          <div>Tue</div>
+          <div>Wed</div>
+          <div>Thu</div>
+          <div>Fri</div>
+          <div>Sat</div>
+        </div>
+
+        <!-- Calendar Grid -->
+        <div id="calendarGrid" class="grid grid-cols-7 gap-1 sm:gap-2 min-h-[480px]">
+          <!-- Days injected dynamically -->
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW 3: DEDICATED SUMMARY REPORT VIEW -->
+    <div id="view-report" class="view-section hidden space-y-6">
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-6 max-w-4xl mx-auto" id="printableReport">
+        
+        <!-- Report Header Bar with Controls -->
+        <div class="flex justify-between items-start border-b border-slate-200 pb-5 no-print">
+          <div>
+            <h2 class="text-xl font-extrabold text-slate-900 flex items-center">
+              <i class="fa-solid fa-file-waveform text-emerald-600 mr-2.5 text-2xl"></i> Clinical Summary Report
+            </h2>
+            <p class="text-xs text-slate-500 mt-0.5">Comprehensive aggregate breakdown for doctor discussion</p>
+          </div>
+          <div class="flex items-center space-x-2">
+            <button onclick="window.print()" class="bg-sky-600 hover:bg-sky-700 text-white font-semibold text-xs px-4 py-2 rounded-xl transition flex items-center shadow-sm">
+              <i class="fa-solid fa-print mr-2"></i> Print / Save PDF
+            </button>
+          </div>
+        </div>
+
+        <!-- Patient & Physician Meta Header -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs">
+          <div class="space-y-1">
+            <div class="flex justify-between"><span class="text-slate-500">Patient Name:</span> <input type="text" id="reportPatientName" value="John Doe" class="font-bold text-slate-900 bg-transparent border-b border-dashed border-slate-400 focus:outline-none w-36 text-right"></div>
+            <div class="flex justify-between"><span class="text-slate-500">Date of Birth:</span> <input type="text" id="reportPatientDOB" value="1975-04-12" class="font-medium text-slate-800 bg-transparent border-b border-dashed border-slate-400 focus:outline-none w-28 text-right"></div>
+            <div class="flex justify-between"><span class="text-slate-500">Target Month:</span> <span id="reportMonthHeader" class="font-bold text-slate-900">August 2026</span></div>
+          </div>
+          <div class="space-y-1">
+            <div class="flex justify-between"><span class="text-slate-500">Physician:</span> <input type="text" id="reportDoctorName" value="Dr. Sarah Jenkins" class="font-semibold text-slate-900 bg-transparent border-b border-dashed border-slate-400 focus:outline-none w-36 text-right"></div>
+            <div class="flex justify-between"><span class="text-slate-500">Generated On:</span> <span id="reportGenDate" class="font-medium text-slate-800">--</span></div>
+            <div class="flex justify-between"><span class="text-slate-500">Standard:</span> <span class="font-semibold text-slate-700">AHA Guidelines 2017</span></div>
+          </div>
+        </div>
+
+        <!-- KPI Summary Cards for Report -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
+          <div class="p-3 bg-slate-50 rounded-xl border border-slate-200">
+            <p class="text-[11px] font-bold text-slate-500 uppercase">Total Logs</p>
+            <p class="text-2xl font-extrabold text-slate-900 mt-1" id="reportTotalCount">0</p>
+          </div>
+          <div class="p-3 bg-slate-50 rounded-xl border border-slate-200">
+            <p class="text-[11px] font-bold text-slate-500 uppercase">Monthly Avg BP</p>
+            <p class="text-2xl font-extrabold text-sky-600 mt-1" id="reportAvgBP">--/--</p>
+          </div>
+          <div class="p-3 bg-slate-50 rounded-xl border border-slate-200">
+            <p class="text-[11px] font-bold text-slate-500 uppercase">Avg Pulse</p>
+            <p class="text-2xl font-extrabold text-rose-600 mt-1" id="reportAvgHR">-- BPM</p>
+          </div>
+          <div class="p-3 bg-slate-50 rounded-xl border border-slate-200">
+            <p class="text-[11px] font-bold text-slate-500 uppercase">Pulse Pressure</p>
+            <p class="text-2xl font-extrabold text-indigo-600 mt-1" id="reportPP">--</p>
+          </div>
+        </div>
+
+        <!-- Diurnal & Min/Max Analysis Section -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="border border-slate-200 p-4 rounded-xl space-y-2 text-xs">
+            <h4 class="font-bold text-slate-800 uppercase tracking-wider text-[11px]">Diurnal Averages (AM vs PM)</h4>
+            <div class="flex justify-between py-1 border-b border-slate-100">
+              <span class="text-slate-600"><i class="fa-solid fa-sun text-amber-500 mr-1.5"></i> Morning Average:</span>
+              <span id="reportAM" class="font-bold text-slate-900">--</span>
+            </div>
+            <div class="flex justify-between py-1 border-b border-slate-100">
+              <span class="text-slate-600"><i class="fa-solid fa-moon text-indigo-500 mr-1.5"></i> Evening Average:</span>
+              <span id="reportPM" class="font-bold text-slate-900">--</span>
+            </div>
+            <p class="text-[10px] text-slate-400 italic mt-1">Evaluates diurnal dipping patterns across day/night cycles.</p>
+          </div>
+
+          <div class="border border-slate-200 p-4 rounded-xl space-y-2 text-xs">
+            <h4 class="font-bold text-slate-800 uppercase tracking-wider text-[11px]">Vitals Range Bounds</h4>
+            <div class="flex justify-between py-1 border-b border-slate-100">
+              <span class="text-slate-600">Systolic Range:</span>
+              <span id="reportSysRange" class="font-bold text-slate-900">-- mmHg</span>
+            </div>
+            <div class="flex justify-between py-1 border-b border-slate-100">
+              <span class="text-slate-600">Diastolic Range:</span>
+              <span id="reportDiaRange" class="font-bold text-slate-900">-- mmHg</span>
+            </div>
+            <div class="flex justify-between py-1 border-b border-slate-100">
+              <span class="text-slate-600">Heart Rate Range:</span>
+              <span id="reportHRRange" class="font-bold text-slate-900">-- BPM</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- AHA Classification Progress Distribution -->
+        <div class="space-y-3">
+          <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider">AHA Risk Category Distribution</h4>
+          <div class="space-y-2 text-xs" id="reportCategoryDistribution">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+        <!-- Doctor / Clinical Notes -->
+        <div class="border border-slate-300 rounded-xl p-4">
+          <label class="block text-xs font-bold text-slate-800 uppercase mb-2">Physician / Clinical Notes:</label>
+          <textarea id="reportClinicalNotes" rows="3" placeholder="Enter clinical observations, medication adjustments, or symptoms discussed during consultation..." class="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-rose-500 focus:border-rose-500"></textarea>
+        </div>
+
+        <!-- Printable Footer -->
+        <div class="pt-4 border-t border-slate-200 text-center text-[10px] text-slate-400 space-y-1">
+          <p>VitalsFlow Summary Report • Designed for clinical tracking and doctor consultation.</p>
+          <p>Disclaimer: This record is for informational purposes and should be reviewed by a licensed medical professional.</p>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+
+  <!-- CALENDAR DAY DETAIL MODAL -->
+  <div id="dayModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-xl border border-slate-200 max-w-md w-full overflow-hidden">
+      <div class="bg-slate-50 px-5 py-4 border-b border-slate-200 flex justify-between items-center">
+        <div>
+          <h3 class="text-base font-bold text-slate-900" id="dayModalTitle">Readings for Date</h3>
+          <p class="text-xs text-slate-500" id="dayModalSubtitle">Day view</p>
+        </div>
+        <button onclick="closeDayModal()" class="text-slate-400 hover:text-slate-600 p-1">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <div class="p-5 space-y-4">
+        <div id="dayModalLogList" class="space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
+          <!-- Filled dynamically -->
+        </div>
+
+        <div class="pt-3 border-t border-slate-100 flex justify-between">
+          <button onclick="closeDayModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl">
+            Close
+          </button>
+          <button onclick="openFormModalForDay()" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl flex items-center space-x-1.5">
+            <i class="fa-solid fa-plus"></i>
+            <span>Add Reading for This Day</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD / EDIT LOG ENTRY MODAL -->
+  <div id="formModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-xl border border-slate-200 max-w-lg w-full overflow-hidden">
+      <div class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+        <h3 id="modalTitle" class="text-base font-bold text-slate-900 flex items-center">
+          <i class="fa-solid fa-heart-circle-plus text-rose-500 mr-2"></i> Log Vitals Reading
+        </h3>
+        <button onclick="closeFormModal()" class="text-slate-400 hover:text-slate-600">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <form id="bpForm" onsubmit="handleFormSubmit(event)" class="p-6 space-y-4">
+        <input type="hidden" id="editEntryId" value="">
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Date *</label>
+            <input type="date" id="inputDate" required class="w-full text-sm bg-slate-50 border border-slate-300 rounded-xl p-2.5 focus:ring-rose-500 focus:border-rose-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Time & Period *</label>
+            <div class="flex space-x-1">
+              <input type="time" id="inputTime" required class="w-1/2 text-sm bg-slate-50 border border-slate-300 rounded-xl p-2.5 focus:ring-rose-500 focus:border-rose-500">
+              <select id="inputPeriod" required class="w-1/2 text-xs bg-slate-50 border border-slate-300 rounded-xl p-2.5 focus:ring-rose-500">
+                <option value="Morning">Morning</option>
+                <option value="Afternoon">Afternoon</option>
+                <option value="Evening">Evening</option>
+                <option value="Night">Night</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1 text-center">Systolic</label>
+            <div class="relative">
+              <input type="number" id="inputSystolic" min="50" max="260" placeholder="120" required oninput="updateLiveCategoryPreview()" class="w-full text-center font-bold text-lg bg-white border border-slate-300 rounded-lg p-2 focus:ring-rose-500 focus:border-rose-500">
+              <span class="block text-[10px] text-center text-slate-400 mt-0.5">mmHg</span>
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1 text-center">Diastolic</label>
+            <div class="relative">
+              <input type="number" id="inputDiastolic" min="30" max="160" placeholder="80" required oninput="updateLiveCategoryPreview()" class="w-full text-center font-bold text-lg bg-white border border-slate-300 rounded-lg p-2 focus:ring-rose-500 focus:border-rose-500">
+              <span class="block text-[10px] text-center text-slate-400 mt-0.5">mmHg</span>
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1 text-center">Heart Rate</label>
+            <div class="relative">
+              <input type="number" id="inputPulse" min="30" max="220" placeholder="72" required class="w-full text-center font-bold text-lg bg-white border border-slate-300 rounded-lg p-2 focus:ring-rose-500 focus:border-rose-500">
+              <span class="block text-[10px] text-center text-slate-400 mt-0.5">BPM</span>
+            </div>
+          </div>
+        </div>
+
+        <div id="liveCategoryPreview" class="p-3 rounded-xl text-xs font-medium text-center bg-slate-100 text-slate-600 transition">
+          Enter Systolic & Diastolic values to view AHA classification status
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Arm Used</label>
+            <select id="inputArm" class="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl p-2.5">
+              <option value="Left Arm">Left Arm (Recommended)</option>
+              <option value="Right Arm">Right Arm</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Position</label>
+            <select id="inputPosition" class="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl p-2.5">
+              <option value="Sitting">Sitting Quietly</option>
+              <option value="Lying Down">Lying Down</option>
+              <option value="Standing">Standing</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Notes / Circumstances</label>
+          <input type="text" id="inputNotes" placeholder="e.g. After coffee, post-workout, took meds..." class="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl p-2.5 focus:ring-rose-500">
+        </div>
+
+        <div class="pt-3 flex justify-end space-x-3 border-t border-slate-100">
+          <button type="button" onclick="closeFormModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100">
+            Cancel
+          </button>
+          <button type="submit" class="px-5 py-2 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 shadow-md shadow-rose-200">
+            Save Log Entry
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- AHA GUIDELINES INFO MODAL -->
+  <div id="infoModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-xl border border-slate-200 max-w-lg w-full p-6 space-y-4">
+      <div class="flex justify-between items-center border-b border-slate-200 pb-3">
+        <h3 class="text-base font-bold text-slate-900 flex items-center">
+          <i class="fa-solid fa-heart text-rose-500 mr-2"></i> AHA Blood Pressure Standards
+        </h3>
+        <button onclick="toggleInfoModal()" class="text-slate-400 hover:text-slate-600">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <div class="space-y-2 text-xs">
+        <div class="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900">
+          <div class="font-bold">Normal</div>
+          <div>Systolic &lt; 120 <strong>AND</strong> Diastolic &lt; 80 mmHg</div>
+        </div>
+
+        <div class="p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900">
+          <div class="font-bold">Elevated</div>
+          <div>Systolic 120-129 <strong>AND</strong> Diastolic &lt; 80 mmHg</div>
+        </div>
+
+        <div class="p-2.5 rounded-xl bg-orange-50 border border-orange-200 text-orange-900">
+          <div class="font-bold">Hypertension Stage 1</div>
+          <div>Systolic 130-139 <strong>OR</strong> Diastolic 80-89 mmHg</div>
+        </div>
+
+        <div class="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-900">
+          <div class="font-bold">Hypertension Stage 2</div>
+          <div>Systolic 140+ <strong>OR</strong> Diastolic 90+ mmHg</div>
+        </div>
+
+        <div class="p-2.5 rounded-xl bg-purple-50 border border-purple-200 text-purple-900">
+          <div class="font-bold">Hypertensive Crisis</div>
+          <div>Systolic &gt; 180 <strong>AND/OR</strong> Diastolic &gt; 120 mmHg</div>
+        </div>
+      </div>
+
+      <div class="pt-2 text-right">
+        <button onclick="toggleInfoModal()" class="px-4 py-2 bg-slate-800 text-white font-semibold text-xs rounded-xl">
+          Got It
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT APP CORE LOGIC -->
+  <script>
+    const STORAGE_KEY = 'vitalsflow_bp_logs_v2';
+    let vitalsLogs = [];
+    let activeView = 'dashboard';
+    let selectedCalendarDayStr = null;
+
+    let trendChartInstance = null;
+    let categoryChartInstance = null;
+
+    // AHA Categories mapping
+    const CATEGORIES = {
+      CRISIS: { name: 'Hypertensive Crisis', badgeBg: 'bg-purple-100', textClr: 'text-purple-800', borderClr: 'border-purple-300', dotBg: 'bg-purple-500', hex: '#8b5cf6' },
+      STAGE2: { name: 'Stage 2', badgeBg: 'bg-rose-100', textClr: 'text-rose-800', borderClr: 'border-rose-300', dotBg: 'bg-rose-500', hex: '#f43f5e' },
+      STAGE1: { name: 'Stage 1', badgeBg: 'bg-orange-100', textClr: 'text-orange-800', borderClr: 'border-orange-300', dotBg: 'bg-orange-500', hex: '#f97316' },
+      ELEVATED: { name: 'Elevated', badgeBg: 'bg-amber-100', textClr: 'text-amber-800', borderClr: 'border-amber-300', dotBg: 'bg-amber-500', hex: '#eab308' },
+      NORMAL: { name: 'Normal', badgeBg: 'bg-emerald-100', textClr: 'text-emerald-800', borderClr: 'border-emerald-300', dotBg: 'bg-emerald-500', hex: '#10b981' }
+    };
+
+    function classifyBP(sys, dia) {
+      if (sys > 180 || dia > 120) return CATEGORIES.CRISIS;
+      if (sys >= 140 || dia >= 90) return CATEGORIES.STAGE2;
+      if (sys >= 130 || dia >= 80) return CATEGORIES.STAGE1;
+      if (sys >= 120 && dia < 80) return CATEGORIES.ELEVATED;
+      return CATEGORIES.NORMAL;
+    }
+
+    function generateDemoDataset() {
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, '0');
+      const sampleEntries = [];
+
+      for (let i = 28; i >= 1; i--) {
+        const dayStr = String(i).padStart(2, '0');
+        const dateStr = `${year}-${month}-${dayStr}`;
+
+        // Morning
+        const sysAM = 114 + Math.floor(Math.random() * 22);
+        const diaAM = 72 + Math.floor(Math.random() * 14);
+        const pulseAM = 62 + Math.floor(Math.random() * 14);
+        
+        sampleEntries.push({
+          id: 'demo_' + dateStr + '_am',
+          date: dateStr,
+          time: '08:15',
+          period: 'Morning',
+          systolic: sysAM,
+          diastolic: diaAM,
+          pulse: pulseAM,
+          arm: 'Left Arm',
+          position: 'Sitting',
+          notes: i % 4 === 0 ? 'After morning coffee' : ''
+        });
+
+        // Evening (on most days)
+        if (i % 3 !== 0) {
+          const sysPM = 118 + Math.floor(Math.random() * 24);
+          const diaPM = 75 + Math.floor(Math.random() * 15);
+          const pulsePM = 68 + Math.floor(Math.random() * 16);
+
+          sampleEntries.push({
+            id: 'demo_' + dateStr + '_pm',
+            date: dateStr,
+            time: '20:30',
+            period: 'Evening',
+            systolic: sysPM,
+            diastolic: diaPM,
+            pulse: pulsePM,
+            arm: 'Left Arm',
+            position: 'Sitting',
+            notes: i % 5 === 0 ? 'Feeling slightly tired' : ''
+          });
+        }
+      }
+
+      return sampleEntries;
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const today = new Date();
+      const monthStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+      document.getElementById('monthSelect').value = monthStr;
+      document.getElementById('inputDate').valueAsDate = today;
+      document.getElementById('inputTime').value = "08:00";
+      document.getElementById('reportGenDate').textContent = today.toLocaleDateString();
+
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        try { vitalsLogs = JSON.parse(stored); }
+        catch(e) { vitalsLogs = generateDemoDataset(); saveToStorage(); }
+      } else {
+        vitalsLogs = generateDemoDataset();
+        saveToStorage();
+      }
+
+      renderCurrentView();
+    });
+
+    function saveToStorage() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(vitalsLogs));
+    }
+
+    function resetDemoData() {
+      vitalsLogs = generateDemoDataset();
+      saveToStorage();
+      renderCurrentView();
+    }
+
+    function switchView(viewName) {
+      activeView = viewName;
+      document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
+      document.getElementById(`view-${viewName}`).classList.remove('hidden');
+
+      // Update Desktop Tabs
+      ['dashboard', 'calendar', 'report'].forEach(tab => {
+        const btn = document.getElementById(`tab-${tab}`);
+        const mobBtn = document.getElementById(`mob-tab-${tab}`);
+        if (tab === viewName) {
+          btn.className = 'px-4 py-1.5 text-xs font-bold rounded-lg transition flex items-center space-x-1.5 bg-white text-slate-900 shadow-sm';
+          if (mobBtn) mobBtn.className = 'text-rose-600 font-bold border-b-2 border-rose-600 pb-1';
+        } else {
+          btn.className = 'px-4 py-1.5 text-xs font-semibold rounded-lg transition flex items-center space-x-1.5 text-slate-600 hover:text-slate-900';
+          if (mobBtn) mobBtn.className = 'text-slate-500 pb-1';
+        }
+      });
+
+      renderCurrentView();
+    }
+
+    function changeMonth(delta) {
+      const input = document.getElementById('monthSelect');
+      if (!input.value) return;
+      
+      const [year, month] = input.value.split('-').map(Number);
+      const d = new Date(year, month - 1 + delta, 1);
+      const newMonthStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      input.value = newMonthStr;
+      
+      renderCurrentView();
+    }
+
+    function onMonthChange() {
+      renderCurrentView();
+    }
+
+    function getFilteredLogs() {
+      const selectedMonth = document.getElementById('monthSelect').value;
+      const timeFilter = document.getElementById('timeFilter').value;
+      const categoryFilter = document.getElementById('categoryFilter').value;
+      const searchQuery = document.getElementById('searchInput').value.toLowerCase().trim();
+
+      return vitalsLogs.filter(log => {
+        if (selectedMonth && !log.date.startsWith(selectedMonth)) return false;
+        if (timeFilter !== 'ALL' && log.period !== timeFilter) return false;
+
+        const cat = classifyBP(log.systolic, log.diastolic);
+        if (categoryFilter !== 'ALL' && !cat.name.includes(categoryFilter)) return false;
+
+        if (searchQuery) {
+          const notesMatch = log.notes && log.notes.toLowerCase().includes(searchQuery);
+          const dateMatch = log.date.includes(searchQuery);
+          if (!notesMatch && !dateMatch) return false;
+        }
+
+        return true;
+      });
+    }
+
+    function applyFilters() {
+      renderDashboard();
+    }
+
+    function renderCurrentView() {
+      if (activeView === 'dashboard') renderDashboard();
+      else if (activeView === 'calendar') renderCalendar();
+      else if (activeView === 'report') renderReport();
+    }
+
+    function renderDashboard() {
+      const filtered = getFilteredLogs();
+      document.getElementById('recordCountLabel').textContent = `Showing ${filtered.length} entries`;
+
+      if (filtered.length === 0) {
+        document.getElementById('statAvgBP').textContent = '--/--';
+        document.getElementById('statAvgHR').textContent = '--';
+        document.getElementById('statPulsePressure').textContent = '--';
+        document.getElementById('statAMAvg').textContent = '--/--';
+        document.getElementById('statPMAvg').textContent = '--/--';
+        document.getElementById('statBPRange').textContent = 'Min/Max: --';
+        document.getElementById('statHRRange').textContent = 'Min/Max: --';
+        document.getElementById('statBPStatusBadge').textContent = 'No Data';
+        document.getElementById('statBPStatusBadge').className = 'px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-500';
+
+        renderTable([]);
+        renderCharts([]);
+        return;
+      }
+
+      let totalSys = 0, totalDia = 0, totalPulse = 0;
+      let minSys = 999, maxSys = 0, minDia = 999, maxDia = 0;
+      let minHR = 999, maxHR = 0;
+
+      let amSys = 0, amDia = 0, amCount = 0;
+      let pmSys = 0, pmDia = 0, pmCount = 0;
+
+      filtered.forEach(item => {
+        totalSys += item.systolic;
+        totalDia += item.diastolic;
+        totalPulse += item.pulse;
+
+        if (item.systolic < minSys) minSys = item.systolic;
+        if (item.systolic > maxSys) maxSys = item.systolic;
+        if (item.diastolic < minDia) minDia = item.diastolic;
+        if (item.diastolic > maxDia) maxDia = item.diastolic;
+
+        if (item.pulse < minHR) minHR = item.pulse;
+        if (item.pulse > maxHR) maxHR = item.pulse;
+
+        if (item.period === 'Morning') {
+          amSys += item.systolic; amDia += item.diastolic; amCount++;
+        } else if (item.period === 'Evening' || item.period === 'Night') {
+          pmSys += item.systolic; pmDia += item.diastolic; pmCount++;
+        }
+      });
+
+      const avgSys = Math.round(totalSys / filtered.length);
+      const avgDia = Math.round(totalDia / filtered.length);
+      const avgHR = Math.round(totalPulse / filtered.length);
+      const pulsePressure = avgSys - avgDia;
+
+      const overallCategory = classifyBP(avgSys, avgDia);
+
+      document.getElementById('statAvgBP').textContent = `${avgSys}/${avgDia}`;
+      document.getElementById('statAvgHR').textContent = avgHR;
+      document.getElementById('statPulsePressure').textContent = pulsePressure;
+
+      const badge = document.getElementById('statBPStatusBadge');
+      badge.textContent = overallCategory.name;
+      badge.className = `px-2.5 py-1 rounded-full text-xs font-bold ${overallCategory.badgeBg} ${overallCategory.textClr}`;
+
+      document.getElementById('statBPRange').textContent = `Min/Max: ${minSys}/${minDia} - ${maxSys}/${maxDia}`;
+      document.getElementById('statHRRange').textContent = `Min/Max: ${minHR} - ${maxHR} BPM`;
+
+      const ppEval = document.getElementById('statPPEval');
+      if (pulsePressure > 60) {
+        ppEval.textContent = 'High (>60)';
+        ppEval.className = 'font-semibold text-amber-600';
+      } else if (pulsePressure < 30) {
+        ppEval.textContent = 'Low (<30)';
+        ppEval.className = 'font-semibold text-amber-600';
+      } else {
+        ppEval.textContent = 'Normal (~40)';
+        ppEval.className = 'font-semibold text-emerald-600';
+      }
+
+      document.getElementById('statAMAvg').textContent = amCount > 0 ? `${Math.round(amSys/amCount)}/${Math.round(amDia/amCount)}` : 'N/A';
+      document.getElementById('statPMAvg').textContent = pmCount > 0 ? `${Math.round(pmSys/pmCount)}/${Math.round(pmDia/pmCount)}` : 'N/A';
+
+      renderTable(filtered);
+      renderCharts(filtered);
+    }
+
+    function renderTable(logs) {
+      const tbody = document.getElementById('logTableBody');
+      const emptyState = document.getElementById('emptyState');
+      tbody.innerHTML = '';
+
+      if (logs.length === 0) {
+        emptyState.classList.remove('hidden');
+        return;
+      }
+      emptyState.classList.add('hidden');
+
+      const sorted = [...logs].sort((a, b) => new Date(`${b.date}T${b.time || '00:00'}`) - new Date(`${a.date}T${a.time || '00:00'}`));
+
+      sorted.forEach(item => {
+        const cat = classifyBP(item.systolic, item.diastolic);
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50 transition border-b border-slate-100';
+
+        tr.innerHTML = `
+          <td class="py-3 px-4">
+            <div class="font-semibold text-slate-900">${item.date}</div>
+            <div class="text-xs text-slate-400 flex items-center space-x-1 mt-0.5">
+              <span>${item.time || '00:00'}</span>
+              <span>•</span>
+              <span class="font-medium text-slate-500">${item.period}</span>
+            </div>
+          </td>
+          <td class="py-3 px-4">
+            <div class="text-base font-bold text-slate-900">${item.systolic}<span class="text-xs text-slate-400 font-normal">/</span>${item.diastolic} <span class="text-[10px] text-slate-400 font-normal">mmHg</span></div>
+          </td>
+          <td class="py-3 px-4">
+            <div class="font-bold text-rose-600 flex items-center">
+              <i class="fa-solid fa-heart-pulse text-xs mr-1 text-rose-400"></i> ${item.pulse} <span class="text-[10px] text-slate-400 font-normal ml-1">BPM</span>
+            </div>
+          </td>
+          <td class="py-3 px-4">
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border ${cat.badgeBg} ${cat.textClr} ${cat.borderClr}">
+              ${cat.name}
+            </span>
+          </td>
+          <td class="py-3 px-4 text-xs text-slate-500">
+            <div>${item.arm || 'Left Arm'}</div>
+            <div class="text-[11px] text-slate-400">${item.position || 'Sitting'}</div>
+          </td>
+          <td class="py-3 px-4 text-xs text-slate-600 max-w-[180px] truncate">
+            ${item.notes ? `<span class="italic text-slate-700">"${item.notes}"</span>` : '<span class="text-slate-300">--</span>'}
+          </td>
+          <td class="py-3 px-4 text-right no-print">
+            <button onclick="editEntry('${item.id}')" class="text-slate-400 hover:text-sky-600 p-1 rounded transition" title="Edit">
+              <i class="fa-solid fa-pen-to-square"></i>
+            </button>
+            <button onclick="deleteEntry('${item.id}')" class="text-slate-400 hover:text-rose-600 p-1 rounded transition ml-1" title="Delete">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderCharts(logs) {
+      const chronological = [...logs].sort((a, b) => new Date(`${a.date}T${a.time || '00:00'}`) - new Date(`${b.date}T${b.time || '00:00'}`));
+
+      const labels = chronological.map(item => `${item.date.slice(8)} (${item.period.charAt(0)})`);
+      const sysData = chronological.map(item => item.systolic);
+      const diaData = chronological.map(item => item.diastolic);
+      const pulseData = chronological.map(item => item.pulse);
+
+      const trendCtx = document.getElementById('trendChart').getContext('2d');
+      if (trendChartInstance) trendChartInstance.destroy();
+
+      trendChartInstance = new Chart(trendCtx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            { label: 'Systolic', data: sysData, borderColor: '#f43f5e', backgroundColor: 'rgba(244, 63, 94, 0.08)', borderWidth: 2.5, tension: 0.3, fill: true, pointRadius: 4 },
+            { label: 'Diastolic', data: diaData, borderColor: '#0284c7', backgroundColor: 'rgba(2, 132, 199, 0.05)', borderWidth: 2.5, tension: 0.3, fill: true, pointRadius: 4 },
+            { label: 'Heart Rate', data: pulseData, borderColor: '#10b981', borderDash: [4, 4], borderWidth: 1.8, tension: 0.3, fill: false, pointRadius: 3 }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: { legend: { display: false } },
+          scales: { x: { grid: { display: false } }, y: { suggestedMin: 50, suggestedMax: 160 } }
+        }
+      });
+
+      const catCounts = { 'Normal': 0, 'Elevated': 0, 'Stage 1': 0, 'Stage 2': 0, 'Crisis': 0 };
+      logs.forEach(item => {
+        const cat = classifyBP(item.systolic, item.diastolic);
+        if (cat.name.includes('Crisis')) catCounts['Crisis']++;
+        else if (cat.name.includes('Stage 2')) catCounts['Stage 2']++;
+        else if (cat.name.includes('Stage 1')) catCounts['Stage 1']++;
+        else if (cat.name.includes('Elevated')) catCounts['Elevated']++;
+        else catCounts['Normal']++;
+      });
+
+      const catCtx = document.getElementById('categoryChart').getContext('2d');
+      if (categoryChartInstance) categoryChartInstance.destroy();
+
+      categoryChartInstance = new Chart(catCtx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Normal', 'Elevated', 'Stage 1', 'Stage 2', 'Crisis'],
+          datasets: [{
+            data: [catCounts['Normal'], catCounts['Elevated'], catCounts['Stage 1'], catCounts['Stage 2'], catCounts['Crisis']],
+            backgroundColor: [CATEGORIES.NORMAL.hex, CATEGORIES.ELEVATED.hex, CATEGORIES.STAGE1.hex, CATEGORIES.STAGE2.hex, CATEGORIES.CRISIS.hex],
+            borderWidth: 2, borderColor: '#ffffff'
+          }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, cutout: '68%' }
+      });
+
+      const legendList = document.getElementById('categoryLegendList');
+      legendList.innerHTML = '';
+      const total = logs.length || 1;
+
+      const items = [
+        { name: 'Normal', count: catCounts['Normal'], color: CATEGORIES.NORMAL.hex },
+        { name: 'Elevated', count: catCounts['Elevated'], color: CATEGORIES.ELEVATED.hex },
+        { name: 'Stage 1', count: catCounts['Stage 1'], color: CATEGORIES.STAGE1.hex },
+        { name: 'Stage 2', count: catCounts['Stage 2'], color: CATEGORIES.STAGE2.hex }
+      ];
+
+      items.forEach(i => {
+        const pct = Math.round((i.count / total) * 100);
+        legendList.innerHTML += `
+          <div class="flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+              <span class="w-2.5 h-2.5 rounded-full" style="background-color: ${i.color}"></span>
+              <span class="text-slate-600 font-medium">${i.name}</span>
+            </div>
+            <span class="font-bold text-slate-800">${i.count} (${pct}%)</span>
+          </div>
+        `;
+      });
+    }
+
+    function renderCalendar() {
+      const grid = document.getElementById('calendarGrid');
+      grid.innerHTML = '';
+
+      const monthValue = document.getElementById('monthSelect').value; // e.g., "2026-08"
+      if (!monthValue) return;
+
+      const [yearStr, monthStr] = monthValue.split('-');
+      const year = parseInt(yearStr);
+      const month = parseInt(monthStr) - 1; // 0-indexed
+
+      const firstDay = new Date(year, month, 1);
+      const lastDay = new Date(year, month + 1, 0);
+      const startingDayOfWeek = firstDay.getDay(); // 0 = Sun
+      const daysInMonth = lastDay.getDate();
+
+      // Today string for highlighting
+      const todayObj = new Date();
+      const todayStr = `${todayObj.getFullYear()}-${String(todayObj.getMonth() + 1).padStart(2, '0')}-${String(todayObj.getDate()).padStart(2, '0')}`;
+
+      // Map readings by day string "YYYY-MM-DD"
+      const dayLogsMap = {};
+      vitalsLogs.forEach(log => {
+        if (!dayLogsMap[log.date]) dayLogsMap[log.date] = [];
+        dayLogsMap[log.date].push(log);
+      });
+
+      // Render leading empty cells for padding
+      for (let i = 0; i < startingDayOfWeek; i++) {
+        const emptyCell = document.createElement('div');
+        emptyCell.className = 'bg-slate-50/50 rounded-xl border border-slate-100 min-h-[90px] p-1 opacity-50';
+        grid.appendChild(emptyCell);
+      }
+
+      // Render month day cells
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dayFormatted = String(day).padStart(2, '0');
+        const currentDateStr = `${yearStr}-${monthStr}-${dayFormatted}`;
+        const dayLogs = dayLogsMap[currentDateStr] || [];
+
+        const isToday = currentDateStr === todayStr;
+
+        const cell = document.createElement('div');
+        cell.className = `rounded-xl border p-2 min-h-[95px] flex flex-col justify-between cursor-pointer transition hover:shadow-md hover:border-slate-400 bg-white ${
+          isToday ? 'border-rose-500 ring-2 ring-rose-100' : 'border-slate-200'
+        }`;
+
+        cell.onclick = () => openDayModal(currentDateStr, dayLogs);
+
+        // Header inside cell
+        let cellHeaderHTML = `
+          <div class="flex justify-between items-center">
+            <span class="text-xs font-bold ${isToday ? 'bg-rose-500 text-white w-5 h-5 rounded-full flex items-center justify-center' : 'text-slate-700'}">${day}</span>
+            ${dayLogs.length > 0 ? `<span class="text-[10px] font-semibold text-slate-400">${dayLogs.length} ${dayLogs.length === 1 ? 'log' : 'logs'}</span>` : ''}
+          </div>
+        `;
+
+        let cellContentHTML = '';
+        if (dayLogs.length > 0) {
+          // Compute highest severity or latest entry summary
+          let sumSys = 0, sumDia = 0, sumPulse = 0;
+          let worstCat = CATEGORIES.NORMAL;
+
+          dayLogs.forEach(l => {
+            sumSys += l.systolic;
+            sumDia += l.diastolic;
+            sumPulse += l.pulse;
+            const cat = classifyBP(l.systolic, l.diastolic);
+            if (cat === CATEGORIES.CRISIS || (cat === CATEGORIES.STAGE2 && worstCat !== CATEGORIES.CRISIS)) worstCat = cat;
+            else if (cat === CATEGORIES.STAGE1 && worstCat !== CATEGORIES.CRISIS && worstCat !== CATEGORIES.STAGE2) worstCat = cat;
+            else if (cat === CATEGORIES.ELEVATED && worstCat === CATEGORIES.NORMAL) worstCat = cat;
+          });
+
+          const avgSys = Math.round(sumSys / dayLogs.length);
+          const avgDia = Math.round(sumDia / dayLogs.length);
+          const avgPulse = Math.round(sumPulse / dayLogs.length);
+
+          cellContentHTML = `
+            <div class="mt-1 space-y-1">
+              <div class="px-2 py-1 rounded-lg ${worstCat.badgeBg} ${worstCat.textClr} text-center">
+                <div class="text-xs font-extrabold leading-tight">${avgSys}/${avgDia}</div>
+                <div class="text-[10px] opacity-80 flex items-center justify-center space-x-1">
+                  <i class="fa-solid fa-heart-pulse text-[9px]"></i>
+                  <span>${avgPulse} BPM</span>
+                </div>
+              </div>
+            </div>
+          `;
+        } else {
+          cellContentHTML = `
+            <div class="mt-2 text-center text-slate-300 hover:text-slate-500 text-[11px] font-medium flex items-center justify-center flex-1">
+              <i class="fa-solid fa-plus mr-1"></i> Add
+            </div>
+          `;
+        }
+
+        cell.innerHTML = cellHeaderHTML + cellContentHTML;
+        grid.appendChild(cell);
+      }
+    }
+
+    function openDayModal(dateStr, dayLogs) {
+      selectedCalendarDayStr = dateStr;
+      document.getElementById('dayModalTitle').textContent = `Logs for ${dateStr}`;
+      document.getElementById('dayModalSubtitle').textContent = `${dayLogs.length} recorded reading(s)`;
+
+      const container = document.getElementById('dayModalLogList');
+      container.innerHTML = '';
+
+      if (dayLogs.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-6 text-slate-400 text-xs">
+            No readings recorded for this day yet.
+          </div>
+        `;
+      } else {
+        dayLogs.forEach(item => {
+          const cat = classifyBP(item.systolic, item.diastolic);
+          const div = document.createElement('div');
+          div.className = 'p-3 bg-slate-50 rounded-xl border border-slate-200 flex justify-between items-center text-xs';
+          div.innerHTML = `
+            <div>
+              <div class="flex items-center space-x-2">
+                <span class="font-bold text-slate-900 text-sm">${item.systolic}/${item.diastolic} mmHg</span>
+                <span class="px-2 py-0.5 text-[10px] rounded-full font-bold ${cat.badgeBg} ${cat.textClr}">${cat.name}</span>
+              </div>
+              <div class="text-slate-500 mt-0.5">
+                <i class="fa-solid fa-heart-pulse text-rose-500 mr-1"></i>${item.pulse} BPM • ${item.period} (${item.time})
+              </div>
+              ${item.notes ? `<div class="text-slate-400 italic text-[11px] mt-1">"${item.notes}"</div>` : ''}
+            </div>
+            <div class="flex space-x-1">
+              <button onclick="editEntry('${item.id}')" class="text-slate-400 hover:text-sky-600 p-1.5"><i class="fa-solid fa-pen-to-square"></i></button>
+              <button onclick="deleteEntry('${item.id}')" class="text-slate-400 hover:text-rose-600 p-1.5"><i class="fa-solid fa-trash-can"></i></button>
+            </div>
+          `;
+          container.appendChild(div);
+        });
+      }
+
+      document.getElementById('dayModal').classList.remove('hidden');
+    }
+
+    function closeDayModal() {
+      document.getElementById('dayModal').classList.add('hidden');
+    }
+
+    function openFormModalForDay() {
+      closeDayModal();
+      openFormModal(null, selectedCalendarDayStr);
+    }
+
+    function renderReport() {
+      const filtered = getFilteredLogs();
+      const monthStr = document.getElementById('monthSelect').value;
+      
+      document.getElementById('reportMonthHeader').textContent = monthStr;
+      document.getElementById('reportTotalCount').textContent = filtered.length;
+
+      if (filtered.length === 0) {
+        document.getElementById('reportAvgBP').textContent = '--/--';
+        document.getElementById('reportAvgHR').textContent = '--';
+        document.getElementById('reportPP').textContent = '--';
+        document.getElementById('reportAM').textContent = 'N/A';
+        document.getElementById('reportPM').textContent = 'N/A';
+        document.getElementById('reportSysRange').textContent = '-- mmHg';
+        document.getElementById('reportDiaRange').textContent = '-- mmHg';
+        document.getElementById('reportHRRange').textContent = '-- BPM';
+        document.getElementById('reportCategoryDistribution').innerHTML = '<div class="text-slate-400 italic text-xs">No data recorded for this month.</div>';
+        return;
+      }
+
+      let totalSys = 0, totalDia = 0, totalPulse = 0;
+      let minSys = 999, maxSys = 0, minDia = 999, maxDia = 0;
+      let minHR = 999, maxHR = 0;
+
+      let amSys = 0, amDia = 0, amCount = 0;
+      let pmSys = 0, pmDia = 0, pmCount = 0;
+
+      const catCounts = { 'Normal': 0, 'Elevated': 0, 'Stage 1': 0, 'Stage 2': 0, 'Crisis': 0 };
+
+      filtered.forEach(i => {
+        totalSys += i.systolic;
+        totalDia += i.diastolic;
+        totalPulse += i.pulse;
+
+        if (i.systolic < minSys) minSys = i.systolic;
+        if (i.systolic > maxSys) maxSys = i.systolic;
+        if (i.diastolic < minDia) minDia = i.diastolic;
+        if (i.diastolic > maxDia) maxDia = i.diastolic;
+
+        if (i.pulse < minHR) minHR = i.pulse;
+        if (i.pulse > maxHR) maxHR = i.pulse;
+
+        if (i.period === 'Morning') {
+          amSys += i.systolic; amDia += i.diastolic; amCount++;
+        } else if (i.period === 'Evening' || i.period === 'Night') {
+          pmSys += i.systolic; pmDia += i.diastolic; pmCount++;
+        }
+
+        const cat = classifyBP(i.systolic, i.diastolic);
+        if (cat.name.includes('Crisis')) catCounts['Crisis']++;
+        else if (cat.name.includes('Stage 2')) catCounts['Stage 2']++;
+        else if (cat.name.includes('Stage 1')) catCounts['Stage 1']++;
+        else if (cat.name.includes('Elevated')) catCounts['Elevated']++;
+        else catCounts['Normal']++;
+      });
+
+      const avgSys = Math.round(totalSys / filtered.length);
+      const avgDia = Math.round(totalDia / filtered.length);
+      const avgPulse = Math.round(totalPulse / filtered.length);
+
+      document.getElementById('reportAvgBP').textContent = `${avgSys}/${avgDia}`;
+      document.getElementById('reportAvgHR').textContent = `${avgPulse} BPM`;
+      document.getElementById('reportPP').textContent = `${avgSys - avgDia} mmHg`;
+
+      document.getElementById('reportAM').textContent = amCount > 0 ? `${Math.round(amSys/amCount)}/${Math.round(amDia/amCount)} mmHg (${amCount} logs)` : 'N/A';
+      document.getElementById('reportPM').textContent = pmCount > 0 ? `${Math.round(pmSys/pmCount)}/${Math.round(pmDia/pmCount)} mmHg (${pmCount} logs)` : 'N/A';
+
+      document.getElementById('reportSysRange').textContent = `${minSys} - ${maxSys} mmHg`;
+      document.getElementById('reportDiaRange').textContent = `${minDia} - ${maxDia} mmHg`;
+      document.getElementById('reportHRRange').textContent = `${minHR} - ${maxHR} BPM`;
+
+      // Category breakdown progress bars
+      const container = document.getElementById('reportCategoryDistribution');
+      container.innerHTML = '';
+
+      const total = filtered.length;
+      const categoriesList = [
+        { name: 'Normal (<120/80)', count: catCounts['Normal'], color: CATEGORIES.NORMAL.hex },
+        { name: 'Elevated (120-129/<80)', count: catCounts['Elevated'], color: CATEGORIES.ELEVATED.hex },
+        { name: 'Hypertension Stage 1 (130-139/80-89)', count: catCounts['Stage 1'], color: CATEGORIES.STAGE1.hex },
+        { name: 'Hypertension Stage 2 (140+/90+)', count: catCounts['Stage 2'], color: CATEGORIES.STAGE2.hex },
+        { name: 'Hypertensive Crisis (>180/>120)', count: catCounts['Crisis'], color: CATEGORIES.CRISIS.hex }
+      ];
+
+      categoriesList.forEach(c => {
+        const pct = Math.round((c.count / total) * 100);
+        container.innerHTML += `
+          <div class="space-y-1">
+            <div class="flex justify-between font-medium text-slate-700">
+              <span>${c.name}</span>
+              <span class="font-bold">${c.count} logs (${pct}%)</span>
+            </div>
+            <div class="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
+              <div class="h-full rounded-full transition-all duration-300" style="width: ${pct}%; background-color: ${c.color}"></div>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    function openFormModal(editId = null, presetDate = null) {
+      const modal = document.getElementById('formModal');
+      const form = document.getElementById('bpForm');
+      form.reset();
+
+      document.getElementById('editEntryId').value = editId || '';
+      document.getElementById('modalTitle').innerHTML = editId 
+        ? '<i class="fa-solid fa-pen-to-square text-sky-500 mr-2"></i> Edit Reading Entry'
+        : '<i class="fa-solid fa-heart-circle-plus text-rose-500 mr-2"></i> Log Vitals Reading';
+
+      if (editId) {
+        const item = vitalsLogs.find(x => x.id === editId);
+        if (item) {
+          document.getElementById('inputDate').value = item.date;
+          document.getElementById('inputTime').value = item.time || '08:00';
+          document.getElementById('inputPeriod').value = item.period || 'Morning';
+          document.getElementById('inputSystolic').value = item.systolic;
+          document.getElementById('inputDiastolic').value = item.diastolic;
+          document.getElementById('inputPulse').value = item.pulse;
+          document.getElementById('inputArm').value = item.arm || 'Left Arm';
+          document.getElementById('inputPosition').value = item.position || 'Sitting';
+          document.getElementById('inputNotes').value = item.notes || '';
+        }
+      } else {
+        const today = new Date();
+        document.getElementById('inputDate').value = presetDate || `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+        const hours = String(today.getHours()).padStart(2, '0');
+        const mins = String(today.getMinutes()).padStart(2, '0');
+        document.getElementById('inputTime').value = `${hours}:${mins}`;
+      }
+
+      updateLiveCategoryPreview();
+      modal.classList.remove('hidden');
+    }
+
+    function closeFormModal() {
+      document.getElementById('formModal').classList.add('hidden');
+    }
+
+    function updateLiveCategoryPreview() {
+      const sys = parseInt(document.getElementById('inputSystolic').value);
+      const dia = parseInt(document.getElementById('inputDiastolic').value);
+      const preview = document.getElementById('liveCategoryPreview');
+
+      if (!sys || !dia) {
+        preview.textContent = 'Enter Systolic & Diastolic values to calculate AHA category.';
+        preview.className = 'p-3 rounded-xl text-xs font-medium text-center bg-slate-100 text-slate-500';
+        return;
+      }
+
+      const cat = classifyBP(sys, dia);
+      preview.textContent = `Classification: ${cat.name}`;
+      preview.className = `p-3 rounded-xl text-xs font-bold text-center border ${cat.badgeBg} ${cat.textClr} ${cat.borderClr}`;
+    }
+
+    function handleFormSubmit(e) {
+      e.preventDefault();
+      const editId = document.getElementById('editEntryId').value;
+
+      const newEntry = {
+        id: editId || 'log_' + Date.now(),
+        date: document.getElementById('inputDate').value,
+        time: document.getElementById('inputTime').value,
+        period: document.getElementById('inputPeriod').value,
+        systolic: parseInt(document.getElementById('inputSystolic').value),
+        diastolic: parseInt(document.getElementById('inputDiastolic').value),
+        pulse: parseInt(document.getElementById('inputPulse').value),
+        arm: document.getElementById('inputArm').value,
+        position: document.getElementById('inputPosition').value,
+        notes: document.getElementById('inputNotes').value.trim()
+      };
+
+      if (editId) {
+        const index = vitalsLogs.findIndex(x => x.id === editId);
+        if (index !== -1) vitalsLogs[index] = newEntry;
+      } else {
+        vitalsLogs.unshift(newEntry);
+      }
+
+      saveToStorage();
+      closeFormModal();
+      
+      document.getElementById('monthSelect').value = newEntry.date.slice(0, 7);
+      renderCurrentView();
+    }
+
+    function editEntry(id) {
+      closeDayModal();
+      openFormModal(id);
+    }
+
+    function deleteEntry(id) {
+      vitalsLogs = vitalsLogs.filter(x => x.id !== id);
+      saveToStorage();
+      closeDayModal();
+      renderCurrentView();
+    }
+
+    function exportCSV() {
+      const filtered = getFilteredLogs();
+      if (filtered.length === 0) return;
+
+      let csv = 'Date,Time,Period,Systolic (mmHg),Diastolic (mmHg),Pulse (BPM),Category,Arm,Position,Notes\n';
+      filtered.forEach(item => {
+        const cat = classifyBP(item.systolic, item.diastolic).name;
+        const cleanNotes = (item.notes || '').replace(/"/g, '""');
+        csv += `"${item.date}","${item.time}","${item.period}",${item.systolic},${item.diastolic},${item.pulse},"${cat}","${item.arm}","${item.position}","${cleanNotes}"\n`;
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `VitalsFlow_BP_Report_${document.getElementById('monthSelect').value}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    function toggleInfoModal() {
+      document.getElementById('infoModal').classList.toggle('hidden');
+    }
+  </script>
+</body>
+</html>
