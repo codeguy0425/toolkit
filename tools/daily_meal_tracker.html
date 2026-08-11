@@ -27,8 +27,27 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Chart.js for Monthly Analytics -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Supabase (Database + Auth) -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Supabase (Database + Auth) - load with CDN fallback -->
+    <script>
+        (function() {
+            var attempts = [
+                'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.2/dist/umd/supabase.js',
+                'https://unpkg.com/@supabase/supabase-js@2.112.2/dist/umd/supabase.js'
+            ];
+            var i = 0;
+            function load() {
+                if (i >= attempts.length) {
+                    console.error('Supabase SDK failed to load from all CDNs');
+                    return;
+                }
+                var s = document.createElement('script');
+                s.src = attempts[i++];
+                s.onerror = function() { console.warn('Supabase CDN failed, trying next'); load(); };
+                document.head.appendChild(s);
+            }
+            load();
+        })();
+    </script>
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -353,6 +372,7 @@
             </svg>
             Sign in with Google
         </button>
+        <p id="auth-error" class="hidden text-xs text-rose-600 font-semibold mt-4 max-w-xs"></p>
         <p class="text-xs text-slate-400 mt-4">Only authorized Google accounts can access this data.</p>
     </div>
 
@@ -479,8 +499,32 @@
         let dietRatioChart = null;
         let calorieTrendChart = null;
 
-        // Supabase client
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // Supabase client (created lazily once the SDK is ready)
+        let supabase = null;
+
+        // Wait for the Supabase SDK to load (from either CDN), up to ~8s
+        function ensureSupabase() {
+            return new Promise((resolve) => {
+                if (window.supabase) return resolve(true);
+                let waited = 0;
+                const timer = setInterval(() => {
+                    waited += 100;
+                    if (window.supabase) {
+                        clearInterval(timer);
+                        resolve(true);
+                    } else if (waited >= 8000) {
+                        clearInterval(timer);
+                        resolve(false);
+                    }
+                }, 100);
+            });
+        }
+
+        function showAuthError(msg) {
+            const el = document.getElementById('auth-error');
+            if (el) { el.textContent = msg; el.classList.remove('hidden'); }
+            console.error(msg);
+        }
 
         // Initialize App on Load
         window.onload = function() {
@@ -497,13 +541,21 @@
 
         // ---------- AUTH ----------
         async function initAuth() {
+            const ready = await ensureSupabase();
+            if (!ready) {
+                showAuthError("Supabase SDK failed to load. Check your connection or ad-blocker.");
+                updateAuthUI(null);
+                return;
+            }
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
             let user = null;
             try {
                 const { data: { session } } = await supabase.auth.getSession();
                 user = session?.user || null;
             } catch (e) {
                 console.warn("Auth check failed:", e);
-                showToast("Cannot connect - please check your connection", "error");
+                showAuthError("Cannot connect - please check your connection.");
                 updateAuthUI(null);
                 return;
             }
@@ -550,8 +602,17 @@
         }
 
         async function signInWithGoogle() {
-            const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' });
-            if (error) showToast("Sign-in failed: " + error.message, "error");
+            if (!supabase) {
+                showAuthError("Supabase SDK not loaded yet. Please wait and try again.");
+                return;
+            }
+            try {
+                const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' });
+                if (error) showAuthError("Sign-in failed: " + error.message);
+            } catch (e) {
+                console.error(e);
+                showAuthError("Sign-in error: " + (e.message || "popup may be blocked by your browser"));
+            }
         }
 
         async function signOut() {
