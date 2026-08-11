@@ -11,6 +11,8 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Supabase (Database + Auth) - vendored locally, no CDN dependency -->
+    <script src="lib/supabase.js"></script>
   <!-- Google Fonts: Inter -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
@@ -64,6 +66,23 @@
 </head>
 <body class="text-slate-800 antialiased min-h-screen flex flex-col">
 
+  <!-- AUTH GATE: shown when not signed in -->
+  <div id="auth-gate" class="hidden fixed inset-0 z-[60] bg-slate-50 flex flex-col items-center justify-center px-6">
+    <div class="max-w-sm w-full bg-white rounded-2xl shadow-xl border border-slate-200 p-8 text-center">
+      <div class="w-16 h-16 mx-auto rounded-2xl bg-rose-500 text-white flex items-center justify-center shadow-lg shadow-rose-200 mb-4">
+        <i class="fa-solid fa-heart-pulse text-2xl"></i>
+      </div>
+      <h2 class="text-xl font-bold text-slate-900">VitalsFlow</h2>
+      <p class="text-sm text-slate-500 mt-1">Sign in to access your blood pressure &amp; heart rate records</p>
+      <button onclick="signInWithGoogle()" class="mt-6 w-full flex items-center justify-center space-x-3 bg-white border border-slate-200 hover:bg-slate-50 text-slate-800 font-semibold text-sm px-4 py-3 rounded-xl transition shadow-sm">
+        <svg class="w-5 h-5" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        <span>Sign in with Google</span>
+      </button>
+      <p id="auth-error" class="hidden text-xs text-rose-600 font-semibold mt-4 max-w-xs mx-auto"></p>
+      <p class="text-xs text-slate-400 mt-4">Only authorized Google accounts can access this data.</p>
+    </div>
+  </div>
+
   <!-- Top Navigation Header -->
   <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm no-print">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -97,6 +116,13 @@
 
         <!-- Action Buttons -->
         <div class="flex items-center space-x-2">
+          <div id="user-chip" class="hidden items-center space-x-1.5">
+            <span id="user-email" class="hidden sm:inline text-xs font-semibold text-slate-600 max-w-[120px] truncate"></span>
+            <button onclick="signOut()" title="Sign out" aria-label="Sign out" class="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-colors">
+              <i class="fa-solid fa-right-from-bracket text-sm"></i>
+            </button>
+          </div>
+
           <button onclick="openFormModal()" class="bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs sm:text-sm px-3.5 py-2 rounded-xl transition flex items-center space-x-1.5 shadow-sm">
             <i class="fa-solid fa-plus"></i>
             <span>Log Reading</span>
@@ -404,12 +430,12 @@
         <!-- Patient & Physician Meta Header -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs">
           <div class="space-y-1">
-            <div class="flex justify-between"><span class="text-slate-500">Patient Name:</span> <input type="text" id="reportPatientName" value="John Doe" class="font-bold text-slate-900 bg-transparent border-b border-dashed border-slate-400 focus:outline-none w-36 text-right"></div>
-            <div class="flex justify-between"><span class="text-slate-500">Date of Birth:</span> <input type="text" id="reportPatientDOB" value="1975-04-12" class="font-medium text-slate-800 bg-transparent border-b border-dashed border-slate-400 focus:outline-none w-28 text-right"></div>
+            <div class="flex justify-between"><span class="text-slate-500">Patient Name:</span> <input type="text" id="reportPatientName" value="" placeholder="Your name" class="font-bold text-slate-900 bg-transparent border-b border-dashed border-slate-400 focus:outline-none w-36 text-right"></div>
+            <div class="flex justify-between"><span class="text-slate-500">Date of Birth:</span> <input type="text" id="reportPatientDOB" value="" placeholder="e.g. 1985-01-01" class="font-medium text-slate-800 bg-transparent border-b border-dashed border-slate-400 focus:outline-none w-28 text-right"></div>
             <div class="flex justify-between"><span class="text-slate-500">Target Month:</span> <span id="reportMonthHeader" class="font-bold text-slate-900">August 2026</span></div>
           </div>
           <div class="space-y-1">
-            <div class="flex justify-between"><span class="text-slate-500">Physician:</span> <input type="text" id="reportDoctorName" value="Dr. Sarah Jenkins" class="font-semibold text-slate-900 bg-transparent border-b border-dashed border-slate-400 focus:outline-none w-36 text-right"></div>
+            <div class="flex justify-between"><span class="text-slate-500">Physician:</span> <input type="text" id="reportDoctorName" value="" placeholder="e.g. Dr. Chan" class="font-semibold text-slate-900 bg-transparent border-b border-dashed border-slate-400 focus:outline-none w-36 text-right"></div>
             <div class="flex justify-between"><span class="text-slate-500">Generated On:</span> <span id="reportGenDate" class="font-medium text-slate-800">--</span></div>
             <div class="flex justify-between"><span class="text-slate-500">Standard:</span> <span class="font-semibold text-slate-700">AHA Guidelines 2017</span></div>
           </div>
@@ -669,13 +695,19 @@
 
   <!-- JAVASCRIPT APP CORE LOGIC -->
   <script>
-    const STORAGE_KEY = 'vitalsflow_bp_logs_v2';
     let vitalsLogs = [];
     let activeView = 'dashboard';
     let selectedCalendarDayStr = null;
 
     let trendChartInstance = null;
     let categoryChartInstance = null;
+
+    // Supabase (Database + Auth)
+    let supabaseClient = null;
+    let currentUserCached = null;
+
+    const SUPABASE_URL = 'https://xtpgjavohkefonexjejy.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_15v8eICjPVo_KCOAwUNKAA_wPteXJDJ';
 
     // AHA Categories mapping
     const CATEGORIES = {
@@ -710,7 +742,7 @@
         const pulseAM = 62 + Math.floor(Math.random() * 14);
         
         sampleEntries.push({
-          id: 'demo_' + dateStr + '_am',
+          id: newUuid(),
           date: dateStr,
           time: '08:15',
           period: 'Morning',
@@ -729,7 +761,7 @@
           const pulsePM = 68 + Math.floor(Math.random() * 16);
 
           sampleEntries.push({
-            id: 'demo_' + dateStr + '_pm',
+            id: newUuid(),
             date: dateStr,
             time: '20:30',
             period: 'Evening',
@@ -746,7 +778,51 @@
       return sampleEntries;
     }
 
-    window.addEventListener('DOMContentLoaded', () => {
+    // ---------- SUPABASE AUTH ----------
+    window.addEventListener('DOMContentLoaded', () => { initAuth(); });
+
+    function ensureSupabase() {
+      return new Promise((resolve) => {
+        if (window.supabase) return resolve(true);
+        let waited = 0;
+        const timer = setInterval(() => {
+          waited += 100;
+          if (window.supabase) { clearInterval(timer); resolve(true); }
+          else if (waited >= 8000) { clearInterval(timer); resolve(false); }
+        }, 100);
+      });
+    }
+
+    async function initAuth() {
+      const ready = await ensureSupabase();
+      if (!ready) { showAuthError("Supabase SDK failed to load. Check your connection or ad-blocker."); updateAuthUI(null); return; }
+      supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+      let user = null;
+      try {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        user = session?.user || null;
+      } catch (e) {
+        console.warn("Auth check failed:", e);
+        showAuthError("Cannot connect - please check your connection.");
+        updateAuthUI(null);
+        return;
+      }
+
+      if (user) {
+        updateAuthUI(user);
+        await loadDataFromStorage();
+        finishInit();
+      } else {
+        updateAuthUI(null);
+      }
+
+      supabaseClient.auth.onAuthStateChange((event) => {
+        if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') location.reload();
+      });
+    }
+
+    function finishInit() {
       const today = new Date();
       const monthStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
       document.getElementById('monthSelect').value = monthStr;
@@ -754,26 +830,151 @@
       document.getElementById('inputTime').value = "08:00";
       document.getElementById('reportGenDate').textContent = today.toLocaleDateString();
 
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        try { vitalsLogs = JSON.parse(stored); }
-        catch(e) { vitalsLogs = generateDemoDataset(); saveToStorage(); }
-      } else {
-        vitalsLogs = generateDemoDataset();
-        saveToStorage();
+      // Pre-fill patient name from the Google profile (kept editable)
+      const nameEl = document.getElementById('reportPatientName');
+      if (currentUserCached && !nameEl.value) {
+        const name = currentUserCached.user_metadata?.full_name || currentUserCached.user_metadata?.name || currentUserCached.email || '';
+        if (name) nameEl.value = name;
       }
-
       renderCurrentView();
-    });
+    }
 
-    function saveToStorage() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(vitalsLogs));
+    function updateAuthUI(user) {
+      const gate = document.getElementById('auth-gate');
+      const chip = document.getElementById('user-chip');
+      if (user) {
+        gate.classList.add('hidden');
+        chip.classList.remove('hidden');
+        chip.classList.add('flex');
+        document.getElementById('user-email').textContent = user.email || '';
+      } else {
+        gate.classList.remove('hidden');
+        chip.classList.add('hidden');
+        chip.classList.remove('flex');
+      }
+    }
+
+    function showAuthError(msg) {
+      const el = document.getElementById('auth-error');
+      if (el) { el.textContent = msg; el.classList.remove('hidden'); }
+      console.error(msg);
+    }
+
+    async function signInWithGoogle() {
+      if (!supabaseClient) { showAuthError("Supabase SDK not loaded yet. Please wait and try again."); return; }
+      try {
+        const { error } = await supabaseClient.auth.signInWithOAuth({
+          provider: 'google',
+          options: { redirectTo: window.location.origin + window.location.pathname }
+        });
+        if (error) showAuthError("Sign-in failed: " + error.message);
+      } catch (e) {
+        console.error(e);
+        showAuthError("Sign-in error: " + (e.message || "popup may be blocked by your browser"));
+      }
+    }
+
+    async function signOut() {
+      try { if (supabaseClient) await supabaseClient.auth.signOut(); } catch (e) { console.error(e); }
+      location.reload();
+    }
+
+    async function currentUser() {
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        return user || null;
+      } catch (e) { return null; }
+    }
+
+    // ---------- SUPABASE DB HELPERS ----------
+    function newUuid() {
+      if (crypto && typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+        const r = Math.random() * 16 | 0;
+        return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+      });
+    }
+
+    function rowToEntry(row) {
+      return {
+        id: row.id, date: row.date, time: row.time, period: row.period,
+        systolic: row.systolic, diastolic: row.diastolic, pulse: row.pulse,
+        arm: row.arm || '', position: row.position || '', notes: row.notes || ''
+      };
+    }
+
+    function entryToRow(e, userId) {
+      return {
+        id: e.id, user_id: userId, date: e.date, time: e.time, period: e.period,
+        systolic: e.systolic, diastolic: e.diastolic, pulse: e.pulse,
+        arm: e.arm || null, position: e.position || null, notes: e.notes || null
+      };
+    }
+
+    async function loadDataFromStorage() {
+      if (!supabaseClient) return;
+      const user = await currentUser();
+      if (!user) return;
+      const { data, error } = await supabaseClient.from('vitals')
+        .select('*').eq('user_id', user.id).order('date', { ascending: false });
+      if (error) { showToast("Load failed: " + error.message, 'error'); return; }
+      vitalsLogs = (data || []).map(rowToEntry);
+      currentUserCached = user;
+    }
+
+    async function dbUpsertVital(entry) {
+      const user = await currentUser();
+      if (!user) return;
+      const { error } = await supabaseClient.from('vitals').upsert(entryToRow(entry, user.id), { onConflict: 'id' });
+      if (error) showToast("Save failed: " + error.message, 'error');
+    }
+
+    async function dbDeleteVital(id) {
+      const user = await currentUser();
+      if (!user) return;
+      const { error } = await supabaseClient.from('vitals').delete().eq('id', id);
+      if (error) showToast("Delete failed: " + error.message, 'error');
+    }
+
+    async function dbClearAll() {
+      const user = await currentUser();
+      if (!user) return;
+      const { error } = await supabaseClient.from('vitals').delete().eq('user_id', user.id);
+      if (error) showToast("Clear failed: " + error.message, 'error');
+    }
+
+    async function dbInsertDemo() {
+      const user = await currentUser();
+      if (!user) return;
+      const rows = generateDemoDataset().map(e => ({ ...entryToRow(e, user.id), id: newUuid() }));
+      const { error } = await supabaseClient.from('vitals').insert(rows);
+      if (error) { showToast("Demo load failed: " + error.message, 'error'); return; }
+      showToast("Demo data loaded");
     }
 
     function resetDemoData() {
-      vitalsLogs = generateDemoDataset();
-      saveToStorage();
-      renderCurrentView();
+      if (!confirm("This replaces ALL your records with demo data. Continue?")) return;
+      dbClearAll().then(async () => {
+        await dbInsertDemo();
+        await loadDataFromStorage();
+        renderCurrentView();
+      });
+    }
+
+    // ---------- TOAST ----------
+    function showToast(message, type = 'success') {
+      let toast = document.getElementById('app-toast');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'app-toast';
+        toast.className = 'fixed bottom-6 left-1/2 -translate-x-1/2 z-[70] px-4 py-2.5 rounded-xl text-sm font-semibold text-white shadow-lg transition-opacity duration-300 opacity-0 pointer-events-none';
+        document.body.appendChild(toast);
+      }
+      toast.textContent = message;
+      toast.style.background = type === 'error' ? '#e11d48' : '#059669';
+      toast.style.opacity = '1';
+      clearTimeout(toast._t);
+      toast._t = setTimeout(() => { toast.style.opacity = '0'; }, 2500);
     }
 
     function switchView(viewName) {
@@ -1405,7 +1606,7 @@
         vitalsLogs.unshift(newEntry);
       }
 
-      saveToStorage();
+      dbUpsertVital(newEntry);
       closeFormModal();
       
       document.getElementById('monthSelect').value = newEntry.date.slice(0, 7);
@@ -1419,7 +1620,7 @@
 
     function deleteEntry(id) {
       vitalsLogs = vitalsLogs.filter(x => x.id !== id);
-      saveToStorage();
+      dbDeleteVital(id);
       closeDayModal();
       renderCurrentView();
     }
