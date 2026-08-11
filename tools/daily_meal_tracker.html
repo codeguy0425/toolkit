@@ -481,7 +481,7 @@
         let calorieTrendChart = null;
 
         // Supabase client (created lazily once the SDK is ready)
-        let supabase = null;
+        let supabaseClient = null;
 
         // Wait for the Supabase SDK to load (from either CDN), up to ~8s
         function ensureSupabase() {
@@ -528,11 +528,11 @@
                 updateAuthUI(null);
                 return;
             }
-            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
             let user = null;
             try {
-                const { data: { session } } = await supabase.auth.getSession();
+                const { data: { session } } = await supabaseClient.auth.getSession();
                 user = session?.user || null;
             } catch (e) {
                 console.warn("Auth check failed:", e);
@@ -549,7 +549,7 @@
                 updateAuthUI(null);
             }
 
-            supabase.auth.onAuthStateChange((event) => {
+            supabaseClient.auth.onAuthStateChange((event) => {
                 if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
                     location.reload();
                 }
@@ -583,12 +583,12 @@
         }
 
         async function signInWithGoogle() {
-            if (!supabase) {
+            if (!supabaseClient) {
                 showAuthError("Supabase SDK not loaded yet. Please wait and try again.");
                 return;
             }
             try {
-                const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' });
+                const { error } = await supabaseClient.auth.signInWithOAuth({ provider: 'google' });
                 if (error) showAuthError("Sign-in failed: " + error.message);
             } catch (e) {
                 console.error(e);
@@ -597,13 +597,13 @@
         }
 
         async function signOut() {
-            await supabase.auth.signOut();
+            await supabaseClient.auth.signOut();
             location.reload();
         }
 
         async function currentUser() {
             try {
-                const { data: { user } } = await supabase.auth.getUser();
+                const { data: { user } } = await supabaseClient.auth.getUser();
                 return user || null;
             } catch (e) {
                 return null;
@@ -657,10 +657,10 @@
         async function dbLoadAll() {
             const user = await currentUser();
             if (!user) return;
-            const { data: meals, error: mealsErr } = await supabase
+            const { data: meals, error: mealsErr } = await supabaseClient
                 .from('meals').select('*').eq('user_id', user.id);
             if (mealsErr) throw mealsErr;
-            const { data: water, error: waterErr } = await supabase
+            const { data: water, error: waterErr } = await supabaseClient
                 .from('water').select('*').eq('user_id', user.id);
             if (waterErr) throw waterErr;
 
@@ -672,7 +672,7 @@
         async function dbUpsertMeal(meal) {
             const user = await currentUser();
             if (!user) return;
-            const { error } = await supabase.from('meals').upsert(mealToRow(meal, user.id), { onConflict: 'id' });
+            const { error } = await supabaseClient.from('meals').upsert(mealToRow(meal, user.id), { onConflict: 'id' });
             if (error) showToast("Save failed: " + error.message, "error");
         }
 
@@ -680,7 +680,7 @@
             const user = await currentUser();
             if (!user) return;
             if (meals.length === 0) return;
-            const { error } = await supabase.from('meals')
+            const { error } = await supabaseClient.from('meals')
                 .upsert(meals.map(m => mealToRow(m, user.id)), { onConflict: 'id' });
             if (error) showToast("Save failed: " + error.message, "error");
         }
@@ -688,14 +688,14 @@
         async function dbDeleteMeal(id) {
             const user = await currentUser();
             if (!user) return;
-            const { error } = await supabase.from('meals').delete().eq('id', id);
+            const { error } = await supabaseClient.from('meals').delete().eq('id', id);
             if (error) showToast("Delete failed: " + error.message, "error");
         }
 
         async function dbUpsertWater(date, glasses) {
             const user = await currentUser();
             if (!user) return;
-            const { error } = await supabase.from('water')
+            const { error } = await supabaseClient.from('water')
                 .upsert({ user_id: user.id, date, glasses }, { onConflict: 'user_id,date' });
             if (error) showToast("Save failed: " + error.message, "error");
         }
@@ -703,8 +703,8 @@
         async function dbClearAll() {
             const user = await currentUser();
             if (!user) return;
-            await supabase.from('meals').delete().eq('user_id', user.id);
-            await supabase.from('water').delete().eq('user_id', user.id);
+            await supabaseClient.from('meals').delete().eq('user_id', user.id);
+            await supabaseClient.from('water').delete().eq('user_id', user.id);
         }
 
         // Load from DB
