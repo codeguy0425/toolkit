@@ -27,27 +27,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Chart.js for Monthly Analytics -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Supabase (Database + Auth) - load with CDN fallback -->
-    <script>
-        (function() {
-            var attempts = [
-                'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.2/dist/umd/supabase.js',
-                'https://unpkg.com/@supabase/supabase-js@2.112.2/dist/umd/supabase.js'
-            ];
-            var i = 0;
-            function load() {
-                if (i >= attempts.length) {
-                    console.error('Supabase SDK failed to load from all CDNs');
-                    return;
-                }
-                var s = document.createElement('script');
-                s.src = attempts[i++];
-                s.onerror = function() { console.warn('Supabase CDN failed, trying next'); load(); };
-                document.head.appendChild(s);
-            }
-            load();
-        })();
-    </script>
+    <!-- Supabase (Database + Auth) - vendored locally, no CDN dependency -->
+    <script src="lib/supabase.js"></script>
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
