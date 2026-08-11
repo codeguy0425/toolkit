@@ -628,6 +628,14 @@
         }
 
         // ---------- DB HELPERS ----------
+        function newUuid() {
+            if (crypto && typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+                const r = Math.random() * 16 | 0;
+                return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+            });
+        }
+
         function mealToRow(meal, userId) {
             return {
                 id: meal.id,
@@ -1011,7 +1019,7 @@
 
             const mealId = document.getElementById('meal-id').value;
             const mealObj = {
-                id: mealId || 'meal_' + Date.now(),
+                id: mealId || newUuid(),
                 date: document.getElementById('meal-date').value,
                 type: document.getElementById('meal-type').value,
                 name: document.getElementById('meal-name').value.trim(),
@@ -1307,18 +1315,18 @@
                 const month = String(today.getMonth() + 1).padStart(2, '0');
 
                 mealsData = [
-                    { id: 'm1', date: `${year}-${month}-01`, type: 'Breakfast', name: 'Oatmeal with Berries & Honey', source: 'Home', calories: 350, healthRating: 'Healthy', notes: 'High fiber start' },
-                    { id: 'm2', date: `${year}-${month}-01`, type: 'Lunch', name: 'Chicken Avocado Grain Bowl', source: 'Restaurant', restaurant: 'Sweetgreen', calories: 620, healthRating: 'Healthy', notes: 'Clean lunch' },
-                    { id: 'm3', date: `${year}-${month}-01`, type: 'Dinner', name: 'Pan Seared Salmon & Asparagus', source: 'Home', calories: 580, healthRating: 'Healthy', notes: 'Omega 3 rich' },
+                    { id: '10000000-0000-4000-8000-000000000001', date: `${year}-${month}-01`, type: 'Breakfast', name: 'Oatmeal with Berries & Honey', source: 'Home', calories: 350, healthRating: 'Healthy', notes: 'High fiber start' },
+                    { id: '10000000-0000-4000-8000-000000000002', date: `${year}-${month}-01`, type: 'Lunch', name: 'Chicken Avocado Grain Bowl', source: 'Restaurant', restaurant: 'Sweetgreen', calories: 620, healthRating: 'Healthy', notes: 'Clean lunch' },
+                    { id: '10000000-0000-4000-8000-000000000003', date: `${year}-${month}-01`, type: 'Dinner', name: 'Pan Seared Salmon & Asparagus', source: 'Home', calories: 580, healthRating: 'Healthy', notes: 'Omega 3 rich' },
                     
-                    { id: 'm4', date: `${year}-${month}-03`, type: 'Lunch', name: 'Double Cheeseburger & Fries', source: 'Restaurant', restaurant: 'Shake Shack', calories: 950, healthRating: 'Treat', notes: 'Weekend treat' },
-                    { id: 'm5', date: `${year}-${month}-03`, type: 'Dinner', name: 'Homemade Greek Salad', source: 'Home', calories: 400, healthRating: 'Healthy', notes: 'Light evening' },
+                    { id: '10000000-0000-4000-8000-000000000004', date: `${year}-${month}-03`, type: 'Lunch', name: 'Double Cheeseburger & Fries', source: 'Restaurant', restaurant: 'Shake Shack', calories: 950, healthRating: 'Treat', notes: 'Weekend treat' },
+                    { id: '10000000-0000-4000-8000-000000000005', date: `${year}-${month}-03`, type: 'Dinner', name: 'Homemade Greek Salad', source: 'Home', calories: 400, healthRating: 'Healthy', notes: 'Light evening' },
 
-                    { id: 'm6', date: `${year}-${month}-05`, type: 'Breakfast', name: 'Greek Yogurt & Granola', source: 'Home', calories: 280, healthRating: 'Healthy', notes: '' },
-                    { id: 'm7', date: `${year}-${month}-05`, type: 'Lunch', name: 'Chipotle Chicken Burrito Bowl', source: 'Restaurant', restaurant: 'Chipotle', calories: 750, healthRating: 'Moderate', notes: 'Extra pinto beans' },
+                    { id: '10000000-0000-4000-8000-000000000006', date: `${year}-${month}-05`, type: 'Breakfast', name: 'Greek Yogurt & Granola', source: 'Home', calories: 280, healthRating: 'Healthy', notes: '' },
+                    { id: '10000000-0000-4000-8000-000000000007', date: `${year}-${month}-05`, type: 'Lunch', name: 'Chipotle Chicken Burrito Bowl', source: 'Restaurant', restaurant: 'Chipotle', calories: 750, healthRating: 'Moderate', notes: 'Extra pinto beans' },
 
-                    { id: 'm8', date: `${year}-${month}-08`, type: 'Lunch', name: 'Sushi Combo Set', source: 'Restaurant', restaurant: 'Oishii Sushi', calories: 550, healthRating: 'Healthy', notes: 'Fresh salmon & tuna' },
-                    { id: 'm9', date: `${year}-${month}-10`, type: 'Dinner', name: 'Sweetgreen Harvest Bowl', source: 'Restaurant', restaurant: 'Sweetgreen', calories: 600, healthRating: 'Healthy', notes: 'Favorite salad' },
+                    { id: '10000000-0000-4000-8000-000000000008', date: `${year}-${month}-08`, type: 'Lunch', name: 'Sushi Combo Set', source: 'Restaurant', restaurant: 'Oishii Sushi', calories: 550, healthRating: 'Healthy', notes: 'Fresh salmon & tuna' },
+                    { id: '10000000-0000-4000-8000-000000000009', date: `${year}-${month}-10`, type: 'Dinner', name: 'Sweetgreen Harvest Bowl', source: 'Restaurant', restaurant: 'Sweetgreen', calories: 600, healthRating: 'Healthy', notes: 'Favorite salad' },
                 ];
 
                 waterData[`${year}-${month}-01`] = 7;
