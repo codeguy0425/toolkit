@@ -872,7 +872,12 @@
         const name = currentUserCached.user_metadata?.full_name || currentUserCached.user_metadata?.name || currentUserCached.email || '';
         if (name) nameEl.value = name;
       }
-      renderCurrentView();
+
+      // Restore last-used view (dashboard / calendar / report)
+      let savedView = 'dashboard';
+      try { savedView = localStorage.getItem('vitalsflow_view') || 'dashboard'; } catch(e) {}
+      if (savedView !== 'dashboard' && savedView !== 'calendar' && savedView !== 'report') savedView = 'dashboard';
+      switchView(savedView);
     }
 
     function updateAuthUI(user) {
@@ -1018,6 +1023,7 @@
 
     function switchView(viewName) {
       activeView = viewName;
+      try { localStorage.setItem('vitalsflow_view', viewName); } catch(e) {}
       document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
       document.getElementById(`view-${viewName}`).classList.remove('hidden');
 

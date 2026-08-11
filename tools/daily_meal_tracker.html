@@ -574,6 +574,11 @@
             renderCalendar();
             renderSelectedDayMeals(selectedDateStr);
             renderMonthlySummary();
+
+            // Restore last-used tab (calendar / summary)
+            let savedTab = 'calendar';
+            try { savedTab = localStorage.getItem('nutritrack_view') || 'calendar'; } catch(e) {}
+            if (savedTab === 'summary') switchTab('summary');
         }
 
         function updateAuthUI(user) {
@@ -742,6 +747,7 @@
 
         // --- NAVIGATION & TABS ---
         function switchTab(tabName) {
+            try { localStorage.setItem('nutritrack_view', tabName); } catch(e) {}
             const calendarBtn = document.getElementById('tab-calendar-btn');
             const summaryBtn = document.getElementById('tab-summary-btn');
             const calendarView = document.getElementById('calendar-view');
