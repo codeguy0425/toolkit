@@ -72,7 +72,7 @@
                 <div class="flex items-center space-x-2">
                     <div id="user-chip" class="hidden items-center space-x-2">
                         <span id="user-email" class="text-xs font-semibold text-slate-600 max-w-[80px] truncate sm:max-w-none sm:inline hidden"></span>
-                        <button onclick="signOut()" title="Sign out" class="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-colors">
+                        <button onclick="signOut()" title="Sign out" aria-label="Sign out" class="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-colors">
                             <i class="fa-solid fa-right-from-bracket text-sm"></i>
                         </button>
                     </div>
@@ -111,6 +111,15 @@
         <button onclick="clearAllData()" class="w-full text-left px-4 py-2.5 hover:bg-rose-50 text-rose-600 flex items-center space-x-2.5">
             <i class="fa-solid fa-trash-can w-4"></i>
             <span>Reset All Meal Data</span>
+        </button>
+        <div class="border-t border-slate-100 my-1"></div>
+        <div id="dropdown-user" class="hidden px-4 py-2 border-b border-slate-100">
+            <p class="text-xs font-semibold text-slate-800">Signed in as</p>
+            <p id="dropdown-email" class="text-xs text-slate-500 truncate"></p>
+        </div>
+        <button onclick="signOut()" class="w-full text-left px-4 py-2.5 hover:bg-slate-50 text-slate-700 flex items-center space-x-2.5">
+            <i class="fa-solid fa-right-from-bracket text-slate-500 w-4"></i>
+            <span>Sign Out</span>
         </button>
     </div>
 
@@ -575,10 +584,13 @@
                 chip.classList.remove('hidden');
                 chip.classList.add('flex');
                 document.getElementById('user-email').textContent = user.email || '';
+                document.getElementById('dropdown-user').classList.remove('hidden');
+                document.getElementById('dropdown-email').textContent = user.email || '';
             } else {
                 gate.classList.remove('hidden');
                 chip.classList.add('hidden');
                 chip.classList.remove('flex');
+                document.getElementById('dropdown-user').classList.add('hidden');
             }
         }
 
@@ -600,7 +612,11 @@
         }
 
         async function signOut() {
-            await supabaseClient.auth.signOut();
+            try {
+                if (supabaseClient) await supabaseClient.auth.signOut();
+            } catch (e) {
+                console.error(e);
+            }
             location.reload();
         }
 
