@@ -588,7 +588,10 @@
                 return;
             }
             try {
-                const { error } = await supabaseClient.auth.signInWithOAuth({ provider: 'google' });
+                const { error } = await supabaseClient.auth.signInWithOAuth({
+                    provider: 'google',
+                    options: { redirectTo: window.location.origin + window.location.pathname }
+                });
                 if (error) showAuthError("Sign-in failed: " + error.message);
             } catch (e) {
                 console.error(e);
