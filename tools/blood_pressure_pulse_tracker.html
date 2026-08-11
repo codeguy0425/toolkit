@@ -885,6 +885,15 @@
       try { savedView = localStorage.getItem('vitalsflow_view') || 'dashboard'; } catch(e) {}
       if (savedView !== 'dashboard' && savedView !== 'calendar' && savedView !== 'report') savedView = 'dashboard';
       switchView(savedView);
+
+      // Restore open modals (day detail / form) after a reload
+      try {
+        const ui = JSON.parse(localStorage.getItem(UI_KEY) || 'null');
+        if (ui) {
+          if (ui.dayDate) openDayModal(ui.dayDate, vitalsLogs.filter(l => l.date === ui.dayDate));
+          if (ui.formOpen) openFormModal(null, ui.dayDate || null);
+        }
+      } catch (e) {}
     }
 
     function updateAuthUI(user) {
@@ -1468,10 +1477,12 @@
       }
 
       document.getElementById('dayModal').classList.remove('hidden');
+      saveUiState();
     }
 
     function closeDayModal() {
       document.getElementById('dayModal').classList.add('hidden');
+      saveUiState();
     }
 
     function openFormModalForDay() {
@@ -1616,16 +1627,20 @@
               const el = document.getElementById(id);
               if (el && d[id] !== undefined && d[id] !== '') el.value = d[id];
             });
+            // The day chosen in the calendar wins over the draft's date
+            if (presetDate) document.getElementById('inputDate').value = presetDate;
           }
         } catch (e) {}
       }
 
       updateLiveCategoryPreview();
       modal.classList.remove('hidden');
+      saveUiState();
     }
 
     function closeFormModal() {
       document.getElementById('formModal').classList.add('hidden');
+      saveUiState();
     }
 
     function updateLiveCategoryPreview() {
@@ -1660,6 +1675,19 @@
 
     function clearDraft() {
       try { localStorage.removeItem(DRAFT_KEY); } catch (e) {}
+    }
+
+    // ---------- UI STATE (restores open modals after reload) ----------
+    const UI_KEY = 'vitalsflow_ui';
+    function saveUiState() {
+      try {
+        const dayModal = document.getElementById('dayModal');
+        const formModal = document.getElementById('formModal');
+        localStorage.setItem(UI_KEY, JSON.stringify({
+          dayDate: (dayModal && !dayModal.classList.contains('hidden')) ? (selectedCalendarDayStr || null) : null,
+          formOpen: !!(formModal && !formModal.classList.contains('hidden'))
+        }));
+      } catch (e) {}
     }
 
     function handleFormSubmit(e) {
